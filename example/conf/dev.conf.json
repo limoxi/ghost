@@ -1,0 +1,10 @@
+{
+	"database": {
+		"engine": "mysql",
+		"host": "${DB_HOST} || 127.0.0.1",
+		"name": "${DB_NAME} || test",
+		"user": "${DB_USER} || test",
+		"password": "${DB_PASSWORD} || test",
+		"port": "${DB_PORT} || 3306"
+	}
+}
