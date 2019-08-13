@@ -13,32 +13,46 @@ import (
 	"time"
 )
 
+func reloadServer(){
+
+}
+
 func graceRun(engine *gin.Engine) {
+	watchFs()
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: engine,
 	}
 
 	go func() {
-		// service connections
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
+		}else{
+			log.Println("server start: ", server.Addr)
 		}
 	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("Shutdown Server ...")
-
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatal("Server Shutdown: ", err)
+	c := <- quit
+	switch c {
+	case syscall.SIGINT, syscall.SIGTERM:
+		log.Println("Shutdown Server ...")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			log.Fatal("Server Shutdown: ", err)
+		}
+	case syscall.SIGUSR2:
+		log.Println("Reload Server ...")
 	}
+}
 
-	log.Println("Server exiting")
+// 开发环境下监听项目文件变化，触发signal
+func watchFs(){
+	if Config.Mode == DEV_MODE{
+		watchProject()
+	}
 }
 
 // parseResource
@@ -87,6 +101,8 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 }
 
 func RunWebServer(){
+
+	watchFs()
 
 	engine := gin.New()
 
