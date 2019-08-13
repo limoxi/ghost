@@ -2,9 +2,9 @@ package ghost
 
 import "mime/multipart"
 
-type RequestParam Map
+type RequestParams Map
 
-func (rp RequestParam) GetFile(key string) *multipart.FileHeader{
+func (rp RequestParams) GetFile(key string) *multipart.FileHeader{
 	if v, ok := rp[key]; ok && v != nil{
 		return v.(*multipart.FileHeader)
 	}else{
@@ -12,7 +12,7 @@ func (rp RequestParam) GetFile(key string) *multipart.FileHeader{
 	}
 }
 
-func (rp RequestParam) GetFiles(key string) []*multipart.FileHeader{
+func (rp RequestParams) GetFiles(key string) []*multipart.FileHeader{
 	listKey := key + "[]"
 	if v, ok := rp[listKey]; ok && v != nil{
 		return v.([]*multipart.FileHeader)

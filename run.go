@@ -64,28 +64,29 @@ func parseResource(resource string) string{
 
 // unifyRequestParams
 // 将 uri、query、postForm、file等参数合并到一处，统一通过key-value获取
-func unifyRequestParams(ctx *gin.Context) RequestParam{
-	return RequestParam{}
+func unifyRequestParams(ctx *gin.Context) RequestParams{
+	return RequestParams{}
 }
 
 func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 	for _, r := range routers{
 		group.Any(parseResource(r.GetResource()), func (ctx *gin.Context){
-			unifiedParams := unifyRequestParams(ctx)
+			r.setCtx(ctx)
+			r.setParams(unifyRequestParams(ctx))
 			var resp Response
 			switch ctx.Request.Method {
 			case "HEAD":
-				resp = r.Head(ctx, unifiedParams)
+				resp = r.Head()
 			case "OPTION":
-				resp = r.Option(ctx, unifiedParams)
+				resp = r.Option()
 			case "", "GET":
-				resp = r.Get(ctx, unifiedParams)
+				resp = r.Get()
 			case "PUT":
-				resp = r.Put(ctx, unifiedParams)
+				resp = r.Put()
 			case "POST":
-				resp = r.Post(ctx, unifiedParams)
+				resp = r.Post()
 			case "DELETE":
-				resp = r.Delete(ctx, unifiedParams)
+				resp = r.Delete()
 			default:
 				panic("method not implement")
 			}

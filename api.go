@@ -1,9 +1,17 @@
 package ghost
 
+import "github.com/gin-gonic/gin"
+
 var registeredApis = make([]apiInterface, 0)
 var registeredGroupedApis = make(map[string][]apiInterface)
 
 type apiInterface interface {
+
+	setCtx(*gin.Context)
+	setParams(RequestParams)
+	GetCtx() *gin.Context
+	GetParams() RequestParams
+
 	GetResource() string
 	GetLock() string
 
