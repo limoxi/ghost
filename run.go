@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,16 +18,18 @@ func reloadServer(){
 
 func graceRun(engine *gin.Engine) {
 	watchFs()
+	host := Config.GetString("web_server.host", "")
+	port := Config.GetInt("web_server.port", 8080)
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf("%s:%d", host, port),
 		Handler: engine,
 	}
 
+	Info("server start: ", server.Addr)
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
-		}else{
-			log.Println("server start: ", server.Addr)
+			CloseAllDBConnections()
+			Panicf("listen: %s", err)
 		}
 	}()
 
@@ -37,14 +38,16 @@ func graceRun(engine *gin.Engine) {
 	c := <- quit
 	switch c {
 	case syscall.SIGINT, syscall.SIGTERM:
-		log.Println("Shutdown Server ...")
+		Info("Shutdown Server ...")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
+		defer CloseAllDBConnections()
 		if err := server.Shutdown(ctx); err != nil {
-			log.Fatal("Server Shutdown: ", err)
+			Panic("Server Shutdown: ", err)
 		}
 	case syscall.SIGUSR2:
-		log.Println("Reload Server ...")
+		CloseAllDBConnections()
+		Info("Reload Server ...")
 	}
 }
 
@@ -62,17 +65,10 @@ func parseResource(resource string) string{
 	return fmt.Sprintf("/%s/", strings.Replace(resource, ".", "/", -1))
 }
 
-// unifyRequestParams
-// 将 uri、query、postForm、file等参数合并到一处，统一通过key-value获取
-func unifyRequestParams(ctx *gin.Context) RequestParams{
-	return RequestParams{}
-}
-
 func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 	for _, r := range routers{
 		group.Any(parseResource(r.GetResource()), func (ctx *gin.Context){
 			r.setCtx(ctx)
-			r.setParams(unifyRequestParams(ctx))
 			var resp Response
 			switch ctx.Request.Method {
 			case "HEAD":
@@ -102,7 +98,6 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 }
 
 func RunWebServer(){
-
 	watchFs()
 
 	engine := gin.New()

@@ -1,9 +1,15 @@
 package ghost
 
+import "strconv"
+
 type Map map[string]interface{}
 
 func NewEmptyMap() Map{
 	return Map{}
+}
+
+func NewMapFromData(data map[string]interface{}) Map{
+	return Map(data)
 }
 
 func (m Map) Get(key string) interface{}{
@@ -36,7 +42,15 @@ func (m Map) GetInt(key string, args ...int) int{
 	}
 	v := m.Get(key)
 	if v != nil{
-		return v.(int)
+		switch v.(type) {
+		case float64:
+			return int(v.(float64))
+		case string:
+			dv, _ := strconv.Atoi(v.(string))
+			return dv
+		default:
+			return v.(int)
+		}
 	}else{
 		return defaultVal
 	}
@@ -50,7 +64,13 @@ func (m Map) GetFloat(key string, args ...float64) float64{
 	}
 	v := m.Get(key)
 	if v != nil{
-		return v.(float64)
+		switch v.(type) {
+		case string:
+			dv, _ :=  strconv.ParseFloat(v.(string), 64)
+			return dv
+		default:
+			return v.(float64)
+		}
 	}else{
 		return defaultVal
 	}
@@ -67,30 +87,5 @@ func (m Map) GetBool(key string, args ...bool) bool{
 		return v.(bool)
 	}else{
 		return defaultVal
-	}
-}
-
-func (m Map) GetMap(key string) Map{
-	v := m.Get(key)
-	if v != nil {
-		if vt, ok := v.(Map); ok{
-			return vt
-		}
-	}
-	return Map{}
-}
-
-func (m Map) GetArray(key string) []interface{}{
-	df := make([]interface{}, 0)
-
-	data := m.Get(key)
-	if data == nil{
-		return df
-	}
-
-	if v, ok := data.([]interface{}); ok{
-		return v
-	}else{
-		return df
 	}
 }

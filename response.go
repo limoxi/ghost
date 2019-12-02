@@ -29,12 +29,12 @@ func NewErrorJsonResponse(code int, errCode string, args ...string) *JsonRespons
 		"code": code,
 		"errCode": errCode,
 	}
-	switch len(args) {
-	case 1:
+	l := len(args)
+	if l >= 1{
 		d["errMsg"] = args[0]
-	case 2:
-		d["errMsg"] = args[0]
-		d["innerErrMsg"] = args[1]
+	}
+	if l >= 2{
+		d["errStack"] = args[1]
 	}
 	r.data = d
 	return r

@@ -13,5 +13,11 @@ Release 正式版
 ```
 
 ### 升级日志
+> v0.0.2.191002_Beta
+ - 完善各模块
+     - rest api
+     - db orm
+     - config
+     - server
 > v0.0.1.190803_Alpha
  - code base

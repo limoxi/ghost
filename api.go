@@ -1,6 +1,8 @@
 package ghost
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
 var registeredApis = make([]apiInterface, 0)
 var registeredGroupedApis = make(map[string][]apiInterface)
@@ -8,9 +10,7 @@ var registeredGroupedApis = make(map[string][]apiInterface)
 type apiInterface interface {
 
 	setCtx(*gin.Context)
-	setParams(RequestParams)
 	GetCtx() *gin.Context
-	GetParams() RequestParams
 
 	GetResource() string
 	GetLock() string
@@ -24,38 +24,66 @@ type apiInterface interface {
 }
 
 type ApiTemplate struct{
-
+	ctx *gin.Context
 }
 
-func (a ApiTemplate) GetResource() string{
+func (a *ApiTemplate) setCtx(ctx *gin.Context) {
+	a.ctx = ctx
+}
+
+func (a *ApiTemplate) GetCtx() *gin.Context {
+	return a.ctx
+}
+
+// 绑定参数到struct
+func (a *ApiTemplate) Bind(obj interface{}){
+	ginContext := a.GetCtx()
+	ct := ginContext.GetHeader("Content-Type")
+	var err error
+	switch ct {
+	case "application/json":
+		err = ginContext.ShouldBindJSON(obj)
+	case "application/xml":
+		err = ginContext.ShouldBindXML(obj)
+	case "application/x-www-form-urlencoded":
+		err = ginContext.ShouldBind(obj)
+	default:
+		Infof("unhandled Content-Type: %s", ct)
+	}
+	if err != nil{
+		Panicf("invalid params: %s", err)
+	}
+}
+
+func (a *ApiTemplate) GetResource() string{
 	panic("method not implement")
 }
 
-func (a ApiTemplate) GetLock() string{
+func (a *ApiTemplate) GetLock() string{
 	return ""
 }
 
-func (a ApiTemplate) Head() Response{
+func (a *ApiTemplate) Head() Response{
 	panic("method not implement")
 }
 
-func (a ApiTemplate) Option() Response{
+func (a *ApiTemplate) Option() Response{
 	panic("method not implement")
 }
 
-func (a ApiTemplate) Get() Response{
+func (a *ApiTemplate) Get() Response{
 	panic("method not implement")
 }
 
-func (a ApiTemplate) Put() Response{
+func (a *ApiTemplate) Put() Response{
 	panic("method not implement")
 }
 
-func (a ApiTemplate) Post() Response{
+func (a *ApiTemplate) Post() Response{
 	panic("method not implement")
 }
 
-func (a ApiTemplate) Delete() Response{
+func (a *ApiTemplate) Delete() Response{
 	panic("method not implement")
 }
 
