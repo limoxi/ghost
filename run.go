@@ -100,6 +100,7 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 
 func RunWebServer(){
 	engine := gin.New()
+	engine.Use(recovery())
 
 	// 应用中间件
 	for _, m := range registeredMiddlewares{
