@@ -17,7 +17,7 @@ func reloadServer(){
 }
 
 func graceRun(engine *gin.Engine) {
-	watchFs()
+	//watchFs()
 	host := Config.GetString("web_server.host", "")
 	port := Config.GetInt("web_server.port", 8080)
 	server := &http.Server{
@@ -43,7 +43,7 @@ func graceRun(engine *gin.Engine) {
 		defer cancel()
 		defer CloseAllDBConnections()
 		if err := server.Shutdown(ctx); err != nil {
-			Panic("Server Shutdown: ", err)
+			Info("Server Shutdown: ", err)
 		}
 	case syscall.SIGUSR2:
 		CloseAllDBConnections()
@@ -67,39 +67,38 @@ func parseResource(resource string) string{
 
 func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 	for _, r := range routers{
-		group.Any(parseResource(r.GetResource()), func (ctx *gin.Context){
-			r.setCtx(ctx)
-			var resp Response
-			switch ctx.Request.Method {
-			case "HEAD":
-				resp = r.Head()
-			case "OPTION":
-				resp = r.Option()
-			case "", "GET":
-				resp = r.Get()
-			case "PUT":
-				resp = r.Put()
-			case "POST":
-				resp = r.Post()
-			case "DELETE":
-				resp = r.Delete()
-			default:
-				panic("method not implement")
-			}
-
-			switch resp.GetDataType() {
-			case "json":
-				ctx.JSON(200, resp.GetData())
-			default:
-				ctx.String(500, "","empty response")
-			}
-		})
+		func (ir apiInterface){
+			group.Any(parseResource(ir.GetResource()), func (ctx *gin.Context){
+				ir.setCtx(ctx)
+				var resp Response
+				switch ctx.Request.Method {
+				case "HEAD":
+					resp = ir.Head()
+				case "OPTION":
+					resp = ir.Option()
+				case "", "GET":
+					resp = ir.Get()
+				case "PUT":
+					resp = ir.Put()
+				case "POST":
+					resp = ir.Post()
+				case "DELETE":
+					resp = ir.Delete()
+				default:
+					Panic("method not implement")
+				}
+				switch resp.GetDataType() {
+				case "json":
+					ctx.JSON(200, resp.GetData())
+				default:
+					ctx.String(500, "","empty response")
+				}
+			})
+		}(r)
 	}
 }
 
 func RunWebServer(){
-	watchFs()
-
 	engine := gin.New()
 
 	// 应用中间件

@@ -39,7 +39,8 @@ func (this *DomainObject) NewFromDbModel(dbModel interface{}){
 	diValue := reflect.ValueOf(this).Elem()
 	for i:=0; i<siType.NumField(); i++{
 		fieldName := siType.Field(i).Name
+		diFieldValue := diValue.FieldByName(fieldName)
 		siFieldValue := siValue.Field(i)
-		diValue.FieldByName(fieldName).Set(siFieldValue)
+		diFieldValue.Set(siFieldValue)
 	}
 }
