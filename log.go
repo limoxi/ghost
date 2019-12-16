@@ -1,6 +1,7 @@
 package ghost
 
 import (
+	"errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -22,7 +23,7 @@ type panicHook struct{
 }
 
 func (this *panicHook) Fire(entry *log.Entry) error {
-	return nil
+	return errors.New(entry.Message)
 }
 
 func (this *panicHook) Levels() []log.Level {
@@ -31,5 +32,4 @@ func (this *panicHook) Levels() []log.Level {
 
 func init(){
 	log.SetFormatter(&log.JSONFormatter{})
-	log.AddHook(&panicHook{})
 }

@@ -2,17 +2,18 @@ package ghost
 
 import "strconv"
 
-type Map map[string]interface{}
+type Map = map[string]interface{}
+type GMap map[string]interface{}
 
-func NewEmptyMap() Map{
-	return Map{}
+func NewEmptyGMap() GMap{
+	return GMap{}
 }
 
-func NewMapFromData(data map[string]interface{}) Map{
-	return Map(data)
+func NewGMapFromData(data map[string]interface{}) GMap{
+	return GMap(data)
 }
 
-func (m Map) Get(key string) interface{}{
+func (m GMap) Get(key string) interface{}{
 	if v, ok := m[key]; ok{
 		return v
 	}else{
@@ -20,7 +21,7 @@ func (m Map) Get(key string) interface{}{
 	}
 }
 
-func (m Map) GetString(key string, args ...string) string{
+func (m GMap) GetString(key string, args ...string) string{
 	defaultVal := ""
 	switch len(args) {
 	case 1:
@@ -34,7 +35,7 @@ func (m Map) GetString(key string, args ...string) string{
 	}
 }
 
-func (m Map) GetInt(key string, args ...int) int{
+func (m GMap) GetInt(key string, args ...int) int{
 	var defaultVal = 0
 	switch len(args) {
 	case 1:
@@ -56,7 +57,7 @@ func (m Map) GetInt(key string, args ...int) int{
 	}
 }
 
-func (m Map) GetFloat(key string, args ...float64) float64{
+func (m GMap) GetFloat(key string, args ...float64) float64{
 	var defaultVal = 0.00
 	switch len(args) {
 	case 1:
@@ -76,7 +77,7 @@ func (m Map) GetFloat(key string, args ...float64) float64{
 	}
 }
 
-func (m Map) GetBool(key string, args ...bool) bool{
+func (m GMap) GetBool(key string, args ...bool) bool{
 	var defaultVal = false
 	switch len(args) {
 	case 1:

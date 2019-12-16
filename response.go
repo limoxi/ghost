@@ -1,6 +1,7 @@
 package ghost
 
 type Response interface {
+	GetCode() int
 	GetData() interface{}
 	GetDataType() string
 }
@@ -9,8 +10,20 @@ type JsonResponse struct {
 	code int
 	data interface{}
 }
+
+func (this *JsonResponse) GetCode() int{
+	return this.code
+}
 func (this *JsonResponse) GetData() interface{}{
-	return this.data
+	state := "error"
+	if this.code == SERVICE_SUCCESS_CODE{
+		state = "success"
+	}
+	return Map{
+		"code": this.code,
+		"state": state,
+		"data": this.data,
+	}
 }
 func (this *JsonResponse) GetDataType() string{
 	return "json"
@@ -18,15 +31,14 @@ func (this *JsonResponse) GetDataType() string{
 
 func NewJsonResponse(data interface{}) *JsonResponse{
 	r := new(JsonResponse)
-	r.code = 200
+	r.code = SERVICE_SUCCESS_CODE
 	r.data = data
 	return r
 }
-func NewErrorJsonResponse(code int, errCode string, args ...string) *JsonResponse{
+func NewErrorJsonResponse(errCode string, args ...string) *JsonResponse{
 	r := new(JsonResponse)
-	r.code = 200
+	r.code = SERVICE_BUSINESS_ERROR_CODE
 	d := map[string]interface{}{
-		"code": code,
 		"errCode": errCode,
 	}
 	l := len(args)

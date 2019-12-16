@@ -1,22 +1,38 @@
 package ghost
 
-import "github.com/gin-gonic/gin"
+import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+	"runtime/debug"
+)
 
 func recovery() gin.HandlerFunc{
 	Info("recover func loaded...")
 	return func (ctx *gin.Context){
 		defer func() {
 			if err := recover(); err != nil{
+				errMsg := ""
 				var specError *BaseError
 				switch err.(type) {
 				case *BaseError:
 					specError = err.(*BaseError)
+					errMsg = specError.ErrMsg
 				case string:
-					specError = DefaultError(err.(string))
+					errMsg = err.(string)
+					specError = DefaultError(errMsg)
+				case *logrus.Entry:
+					errMsg = err.(*logrus.Entry).Message
+					specError = DefaultError(errMsg)
 				default:
-					specError = DefaultError(err.(error).Error())
+					errMsg = err.(error).Error()
+					specError = DefaultError(errMsg)
 				}
-				ctx.JSON(specError.GetCode(), specError)
+				if Config.Mode == DEV_MODE{
+					debug.PrintStack()
+				}
+				Info(fmt.Sprintf("recover fro error: %s", errMsg))
+				ctx.JSON(SERVICE_INNER_SUCCESS_CODE, specError.GetData())
 			}
 		}()
 		ctx.Next()

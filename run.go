@@ -89,9 +89,9 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 				}
 				switch resp.GetDataType() {
 				case "json":
-					ctx.JSON(200, resp.GetData())
+					ctx.JSON(SERVICE_INNER_SUCCESS_CODE, resp.GetData())
 				default:
-					ctx.String(500, "","empty response")
+					ctx.String(SERVICE_INNER_SUCCESS_CODE, "","empty response")
 				}
 			})
 		}(r)

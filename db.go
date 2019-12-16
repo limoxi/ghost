@@ -10,7 +10,7 @@ import (
 )
 
 type BaseModel struct {
-	ID        uint `gorm:"primary_key"`
+	Id        uint `gorm:"primary_key"`
 	CreatedAt time.Time
 }
 

@@ -1,13 +1,12 @@
 package ghost
 
-var ErrLevel = map[string]uint8{
-	"BUSINESS_ERR": 1,
-	"SYSTEM_ERR": 2,
-}
+const SERVICE_INNER_SUCCESS_CODE = 200
+const SERVICE_SUCCESS_CODE = 200 // 业务成功
+const SERVICE_BUSINESS_ERROR_CODE = 300 // 业务错误
+const SERVICE_SYSTEM_ERROR_CODE = 400 // 系统错误
 
 type BaseError struct{
 	code int
-	level uint8
 	ErrCode string
 	ErrMsg string
 }
@@ -15,19 +14,28 @@ type BaseError struct{
 func (this *BaseError) GetCode() int{
 	return this.code
 }
+func (this *BaseError) GetData() interface{}{
+	return Map{
+		"code": this.code,
+		"state": "error",
+		"data": Map{
+			"errCode": this.ErrCode,
+			"errMsg": this.ErrMsg,
+		},
+	}
+}
 func (this *BaseError) IsBusinessError() bool{
-	return this.level == ErrLevel["BUSINESS_ERR"]
+	return this.code == SERVICE_BUSINESS_ERROR_CODE
 }
 func (this *BaseError) IsSystemError() bool{
-	return this.level == ErrLevel["SYSTEM_ERR"]
+	return this.code == SERVICE_SYSTEM_ERROR_CODE
 }
 func DefaultError(errMsg string) *BaseError{
 	return NewBusinessError(errMsg)
 }
 func NewBusinessError(args ...string) *BaseError{
 	inst := new(BaseError)
-	inst.code = 500
-	inst.level = ErrLevel["BUSINESS_ERR"]
+	inst.code = SERVICE_BUSINESS_ERROR_CODE
 	switch len(args) {
 	case 1:
 		inst.ErrMsg = args[0]
@@ -40,8 +48,7 @@ func NewBusinessError(args ...string) *BaseError{
 
 func NewSystemError(args ...string) *BaseError{
 	inst := new(BaseError)
-	inst.code = 533
-	inst.level = ErrLevel["SYSTEM_ERR"]
+	inst.code = SERVICE_SYSTEM_ERROR_CODE
 	switch len(args) {
 	case 1:
 		inst.ErrMsg = args[0]

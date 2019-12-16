@@ -10,11 +10,11 @@ type ContextObject struct{
 	ctx context.Context
 }
 
-func (c ContextObject) SetCtx(ctx context.Context){
+func (c *ContextObject) SetCtx(ctx context.Context){
 	c.ctx = ctx
 }
 
-func (c ContextObject) GetCtx() context.Context{
+func (c *ContextObject) GetCtx() context.Context{
 	return c.ctx
 }
 
@@ -28,7 +28,7 @@ type DomainModel struct{
 	DomainObject
 }
 
-func (this DomainObject) GetDbModel() interface{}{
+func (this *DomainModel) GetDbModel() interface{}{
 	dbModel, ok := this.ctx.(*gin.Context).Get("dbModel")
 	if ok{
 		return dbModel
@@ -37,9 +37,24 @@ func (this DomainObject) GetDbModel() interface{}{
 	}
 }
 
+func (this *DomainModel) handleEmbedStruct(stField reflect.StructField, svField reflect.Value, dv reflect.Value){
+	for i:=0; i<stField.Type.NumField(); i++{
+		field := stField.Type.Field(i)
+		fieldName := field.Name
+		dvField := dv.FieldByName(fieldName)
+		if field.Type.Kind() == reflect.Struct && dvField.Kind() != reflect.Struct{
+			this.handleEmbedStruct(field, svField.FieldByName(fieldName), dv)
+		}else{
+			if dvField.CanSet(){
+				dvField.Set(svField.Field(i))
+			}
+		}
+	}
+}
+
 // NewFromDbModel
 // 使用反射机制将dbModel中的field值复制到domainObject中
-func (this DomainObject) NewFromDbModel(do interface{}, dbModel interface{}){
+func (this *DomainModel) NewFromDbModel(do interface{}, dbModel interface{}){
 	siType := reflect.TypeOf(dbModel)
 	siValue := reflect.ValueOf(dbModel)
 	if siType.Kind() == reflect.Ptr{
@@ -48,10 +63,16 @@ func (this DomainObject) NewFromDbModel(do interface{}, dbModel interface{}){
 	}
 	diValue := reflect.ValueOf(do).Elem()
 	for i:=0; i<siType.NumField(); i++{
-		fieldName := siType.Field(i).Name
-		diFieldValue := diValue.FieldByName(fieldName)
-		siFieldValue := siValue.Field(i)
-		diFieldValue.Set(siFieldValue)
+		field := siType.Field(i)
+		fieldName := field.Name
+		if field.Type.Kind() == reflect.Struct{
+			this.handleEmbedStruct(field, siValue.FieldByName(fieldName), diValue)
+		}else{
+			diField := diValue.FieldByName(fieldName)
+			if diField.CanSet(){
+				diField.Set(siValue.Field(i))
+			}
+		}
 	}
-	this.ctx.(*gin.Context).Set("dbModel", dbModel)
+	(this.ctx).(*gin.Context).Set("dbModel", dbModel)
 }

@@ -20,13 +20,13 @@ const (
 )
 
 type config struct{
-	Map
+	GMap
 	Mode string
 }
 
 // setDefaultConfigData 默认配置
 func (this *config) setDefaultConfigData(){
-	this.Map = NewEmptyMap()
+	this.GMap = NewEmptyGMap()
 }
 
 // findConfDir 查找配置文件夹conf
@@ -100,7 +100,7 @@ func (this *config) parseJsonFile(filename string) error{
 	if err != nil{
 		return err
 	}
-	this.Map = parseEnvArgs(data)
+	this.GMap = parseEnvArgs(data)
 	return nil
 }
 
@@ -147,8 +147,8 @@ func (this *config) GetArray(key string) []interface{}{
 	return this.Get(key).([]interface{})
 }
 
-func (this *config) GetMap(key string) Map{
-	return this.Get(key).(map[string]interface{})
+func (this *config) GetMap(key string) GMap{
+	return NewGMapFromData(this.Get(key).(Map))
 }
 
 func init(){
