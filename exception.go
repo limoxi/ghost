@@ -2,8 +2,8 @@ package ghost
 
 const SERVICE_INNER_SUCCESS_CODE = 200
 const SERVICE_SUCCESS_CODE = 200 // 业务成功
-const SERVICE_BUSINESS_ERROR_CODE = 300 // 业务错误
-const SERVICE_SYSTEM_ERROR_CODE = 400 // 系统错误
+const SERVICE_BUSINESS_ERROR_CODE = 520 // 业务错误
+const SERVICE_SYSTEM_ERROR_CODE = 530 // 系统错误
 
 type BaseError struct{
 	code int

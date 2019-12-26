@@ -85,7 +85,8 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 				case "DELETE":
 					resp = ir.Delete()
 				default:
-					Panic("method not implement")
+					ctx.String(404, "","http method not implemented")
+					return
 				}
 				switch resp.GetDataType() {
 				case "json":
