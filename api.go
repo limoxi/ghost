@@ -16,7 +16,7 @@ type apiInterface interface {
 	GetLock() string
 
 	Head() Response
-	Option() Response
+	Options() Response
 	Get() Response
 	Put() Response
 	Post() Response
@@ -41,7 +41,7 @@ func (a *ApiTemplate) Bind(obj interface{}){
 	ct := ginContext.GetHeader("Content-Type")
 	var err error
 	switch ct {
-	case "application/json":
+	case "application/json", "application/json;charset=UTF-8":
 		err = ginContext.ShouldBindJSON(obj)
 	case "application/xml":
 		err = ginContext.ShouldBindXML(obj)
@@ -67,8 +67,8 @@ func (a *ApiTemplate) Head() Response{
 	panic("method not implement")
 }
 
-func (a *ApiTemplate) Option() Response{
-	panic("method not implement")
+func (a *ApiTemplate) Options() Response{
+	return NewRawResponse("")
 }
 
 func (a *ApiTemplate) Get() Response{

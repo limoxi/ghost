@@ -51,3 +51,32 @@ func NewErrorJsonResponse(errCode string, args ...string) *JsonResponse{
 	r.data = d
 	return r
 }
+
+type RawResponse struct {
+	code int
+	rawString string
+}
+
+func (this *RawResponse) GetCode() int{
+	return this.code
+}
+func (this *RawResponse) GetData() interface{}{
+	return this.rawString
+}
+func (this *RawResponse) GetDataType() string{
+	return "string"
+}
+
+func NewRawResponse(msg string) *RawResponse{
+	r := new(RawResponse)
+	r.code = SERVICE_SUCCESS_CODE
+	r.rawString = msg
+	return r
+}
+
+func NewErrorRawResponse(msg string) *RawResponse{
+	r := new(RawResponse)
+	r.code = SERVICE_BUSINESS_ERROR_CODE
+	r.rawString = msg
+	return r
+}

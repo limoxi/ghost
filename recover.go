@@ -28,10 +28,10 @@ func recovery() gin.HandlerFunc{
 					errMsg = err.(error).Error()
 					specError = DefaultError(errMsg)
 				}
-				if Config.Mode == DEV_MODE{
+				if Config.Mode == gin.DebugMode{
 					debug.PrintStack()
 				}
-				Info(fmt.Sprintf("recover fro error: %s", errMsg))
+				Error(fmt.Sprintf("recover from error: %s", errMsg))
 				ctx.JSON(SERVICE_INNER_SUCCESS_CODE, specError.GetData())
 			}
 		}()

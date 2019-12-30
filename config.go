@@ -2,9 +2,9 @@ package ghost
 
 import (
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"github.com/limoxi/ghost/utils"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,12 +12,6 @@ import (
 )
 
 var Config *config
-
-const (
-	DEV_MODE = "dev"
-	TEST_MODE = "test"
-	PROD_MODE = "prod"
-)
 
 type config struct{
 	GMap
@@ -68,7 +62,11 @@ func (this *config) load(){
 		this.setDefaultConfigData()
 		return
 	}
-	filename := this.Mode + ".conf.json"
+	pre := "prod"
+	if this.Mode == gin.DebugMode{
+		pre = "dev"
+	}
+	filename := pre + ".conf.json"
 	confPath := filepath.Join(workPath, "conf", filename)
 	if utils.FileExist(confPath){
 		if err := this.parseJsonFile(confPath); err == nil{
@@ -153,11 +151,11 @@ func (this *config) GetMap(key string) GMap{
 
 func init(){
 	Config = new(config)
-	mode := os.Getenv("GHOST_MODE")
+	mode := os.Getenv("GIN_MODE")
 	if mode == ""{
-		mode = DEV_MODE
+		mode = gin.DebugMode
 	}
-	log.Printf("loding config in %s mode...", mode)
+	Infof("loading config in %s mode...", mode)
 	Config.Mode = mode
 	Config.load()
 }

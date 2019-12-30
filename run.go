@@ -53,7 +53,7 @@ func graceRun(engine *gin.Engine) {
 
 // 开发环境下监听项目文件变化，触发signal
 func watchFs(){
-	if Config.Mode == DEV_MODE{
+	if Config.Mode == gin.DebugMode{
 		watchProject()
 	}
 }
@@ -74,8 +74,8 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 				switch ctx.Request.Method {
 				case "HEAD":
 					resp = ir.Head()
-				case "OPTION":
-					resp = ir.Option()
+				case "OPTIONS":
+					resp = ir.Options()
 				case "", "GET":
 					resp = ir.Get()
 				case "PUT":
@@ -100,19 +100,23 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 }
 
 func RunWebServer(){
+	switch Config.Mode {
+
+	}
+	gin.SetMode(gin.DebugMode)
 	engine := gin.New()
 	engine.Use(recovery())
 
 	// 应用中间件
 	for _, m := range registeredMiddlewares{
-		engine.Use(func() gin.HandlerFunc{
-			m.Init()
+		engine.Use(func(im middlewareInterFace) gin.HandlerFunc{
+			im.Init()
 			return func (ctx *gin.Context){
-				m.PreRequest(ctx)
+				im.PreRequest(ctx)
 				ctx.Next()
-				m.AfterResponse(ctx)
+				im.AfterResponse(ctx)
 			}
-		}())
+		}(m))
 	}
 
 	// 应用路由、组

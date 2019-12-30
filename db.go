@@ -10,7 +10,7 @@ import (
 )
 
 type BaseModel struct {
-	Id        uint `gorm:"primary_key"`
+	Id        int `gorm:"primary_key"`
 	CreatedAt time.Time
 }
 
@@ -163,6 +163,7 @@ func SyncDB(args ...string){
 			gdb.AutoMigrate(updatingList...)
 		}
 		if len(creatingList) > 0{
+			Info(creatingList)
 			gdb.CreateTable(creatingList...)
 		}
 	}

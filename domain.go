@@ -65,10 +65,10 @@ func (this *DomainModel) NewFromDbModel(do interface{}, dbModel interface{}){
 	for i:=0; i<siType.NumField(); i++{
 		field := siType.Field(i)
 		fieldName := field.Name
-		if field.Type.Kind() == reflect.Struct{
+		diField := diValue.FieldByName(fieldName)
+		if field.Type.Kind() == reflect.Struct && diField.Kind() != reflect.Struct{
 			this.handleEmbedStruct(field, siValue.FieldByName(fieldName), diValue)
 		}else{
-			diField := diValue.FieldByName(fieldName)
 			if diField.CanSet(){
 				diField.Set(siValue.Field(i))
 			}
