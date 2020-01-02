@@ -1,6 +1,7 @@
 package ghost
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,18 +41,23 @@ func (a *ApiTemplate) Bind(obj interface{}){
 	ginContext := a.GetCtx()
 	ct := ginContext.GetHeader("Content-Type")
 	var err error
-	switch ct {
-	case "application/json", "application/json;charset=UTF-8":
-		err = ginContext.ShouldBindJSON(obj)
-	case "application/xml":
-		err = ginContext.ShouldBindXML(obj)
-	case "application/x-www-form-urlencoded":
+	if ginContext.Request.Method == "GET"{
 		err = ginContext.ShouldBind(obj)
-	default:
-		Infof("unhandled Content-Type: %s", ct)
+	}else{
+		switch ct {
+		case "application/json", "application/json;charset=utf-8", "application/json;charset=UTF-8":
+			err = ginContext.ShouldBindJSON(obj)
+		case "application/xml":
+			err = ginContext.ShouldBindXML(obj)
+		case "application/x-www-form-urlencoded":
+			err = ginContext.ShouldBind(obj)
+		default:
+			Warnf("unhandled Content-Type: %s", ct)
+		}
 	}
+
 	if err != nil{
-		Panicf("invalid params: %s", err)
+		panic(fmt.Sprintf("invalid params: %s", err))
 	}
 }
 

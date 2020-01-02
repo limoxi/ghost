@@ -17,7 +17,7 @@ func recovery() gin.HandlerFunc{
 				switch err.(type) {
 				case *BaseError:
 					specError = err.(*BaseError)
-					errMsg = specError.ErrMsg
+					errMsg = specError.ToString()
 				case string:
 					errMsg = err.(string)
 					specError = DefaultError(errMsg)

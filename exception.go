@@ -1,5 +1,7 @@
 package ghost
 
+import "fmt"
+
 const SERVICE_INNER_SUCCESS_CODE = 200
 const SERVICE_SUCCESS_CODE = 200 // 业务成功
 const SERVICE_BUSINESS_ERROR_CODE = 520 // 业务错误
@@ -23,6 +25,9 @@ func (this *BaseError) GetData() interface{}{
 			"errMsg": this.ErrMsg,
 		},
 	}
+}
+func (this *BaseError) ToString() string{
+	return fmt.Sprintf("code: %s, msg: %s", this.ErrCode, this.ErrMsg)
 }
 func (this *BaseError) IsBusinessError() bool{
 	return this.code == SERVICE_BUSINESS_ERROR_CODE
