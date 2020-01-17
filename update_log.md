@@ -13,17 +13,23 @@ Release 正式版
 ```
 
 ### 升级日志
-> v0.0.3.191216_Bata
+> v0.0.1.200117_Alpha
+ - 增加开发模式下的文件变更监控
+ - 修复一些bug
+ 
+> v0.0.1.191216_Alpha
  - 完善各模块
     - db orm
     - GMap && Map
     - rest response
     - exception
-> v0.0.2.191002_Beta
+    
+> v0.0.1.191002_Alpha
  - 完善各模块
      - rest api
      - db orm
      - config
      - server
+     
 > v0.0.1.190803_Alpha
  - code base

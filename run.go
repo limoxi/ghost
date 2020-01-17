@@ -17,7 +17,7 @@ func reloadServer(){
 }
 
 func graceRun(engine *gin.Engine) {
-	//watchFs()
+	go watchFs()
 	host := Config.GetString("web_server.host", "")
 	port := Config.GetInt("web_server.port", 8080)
 	server := &http.Server{
@@ -43,11 +43,8 @@ func graceRun(engine *gin.Engine) {
 		defer cancel()
 		defer CloseAllDBConnections()
 		if err := server.Shutdown(ctx); err != nil {
-			Info("Server Shutdown: ", err)
+			Info("shutdown failed: ", err)
 		}
-	case syscall.SIGUSR2:
-		CloseAllDBConnections()
-		Info("Reload Server ...")
 	}
 }
 
@@ -69,6 +66,7 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 	for _, r := range routers{
 		func (ir apiInterface){
 			group.Any(parseResource(ir.GetResource()), func (ctx *gin.Context){
+				Infof("coming request %s.%s", ir.GetResource(), ctx.Request.Method)
 				ir.setCtx(ctx)
 				var resp Response
 				switch ctx.Request.Method {

@@ -26,6 +26,7 @@ type apiInterface interface {
 
 type ApiTemplate struct{
 	ctx *gin.Context
+	GMap
 }
 
 func (a *ApiTemplate) setCtx(ctx *gin.Context) {
