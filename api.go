@@ -46,14 +46,11 @@ func (a *ApiTemplate) Bind(obj interface{}){
 		err = ginContext.ShouldBind(obj)
 	}else{
 		switch ct {
-		case "application/json", "application/json;charset=utf-8", "application/json;charset=UTF-8":
+		case "application/json;charset=utf-8", "application/json;charset=UTF-8":
 			err = ginContext.ShouldBindJSON(obj)
-		case "application/xml":
-			err = ginContext.ShouldBindXML(obj)
-		case "application/x-www-form-urlencoded":
-			err = ginContext.ShouldBind(obj)
 		default:
-			Warnf("unhandled Content-Type: %s", ct)
+			Infof("coming request Content-Type: %s", ct)
+			err = ginContext.ShouldBind(obj)
 		}
 	}
 

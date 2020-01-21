@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+var fsWatcher *fsnotify.Watcher
+
 func watchDir(watcher *fsnotify.Watcher, dirPath string){
 	err := watcher.Add(dirPath)
 	if err != nil{
@@ -27,7 +29,7 @@ func watchDir(watcher *fsnotify.Watcher, dirPath string){
 }
 
 func watchProject(){
-	watcher, err := fsnotify.NewWatcher()
+	fsWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,7 +37,7 @@ func watchProject(){
 	go func() {
 		for {
 			select {
-			case _, ok := <-watcher.Events:
+			case _, ok := <-fsWatcher.Events:
 				if !ok {
 					return
 				}
@@ -43,7 +45,7 @@ func watchProject(){
 				time.AfterFunc(time.Second * 10, func() {
 					os.Exit(0)
 				})
-			case err, ok := <-watcher.Errors:
+			case err, ok := <-fsWatcher.Errors:
 				if !ok {
 					return
 				}
@@ -52,5 +54,5 @@ func watchProject(){
 		}
 	}()
 	curDir, _ := os.Getwd()
-	watchDir(watcher, curDir)
+	watchDir(fsWatcher, curDir)
 }
