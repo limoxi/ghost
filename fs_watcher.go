@@ -1,6 +1,7 @@
 package ghost
 
 import (
+	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"io/ioutil"
 	"log"
@@ -35,11 +36,19 @@ func watchProject(){
 	go func() {
 		for {
 			select {
-			case _, ok := <-watcher.Events:
+			case event, ok := <-watcher.Events:
 				if !ok {
 					return
 				}
-				log.Println("[fsnotify] project file changed, shutting down server in 5s...")
+				log.Println(fmt.Sprintf("[fsnotify] project file(%s) changed", event.Name))
+
+				sps := strings.Split(event.Name, string(os.PathSeparator))
+				changedFileName := sps[len(sps) - 1]
+				if strings.HasPrefix(changedFileName, ".") ||
+					strings.HasPrefix(changedFileName, "__"){
+					return
+				}
+				log.Println("shutting down server in 5s...")
 				time.AfterFunc(time.Second * 10, func() {
 					os.Exit(0)
 				})
