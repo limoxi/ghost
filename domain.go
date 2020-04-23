@@ -23,8 +23,13 @@ type DomainObject struct{
 	ContextObject
 }
 
-// DomainModel 领域模型（表示实体）
+// DomainModel 领域模型
 type DomainModel struct{
+	DomainObject
+}
+
+// DomainService 领域服务
+type DomainService struct {
 	DomainObject
 }
 

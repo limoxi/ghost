@@ -5,6 +5,8 @@ import "strconv"
 type Map = map[string]interface{}
 type GMap map[string]interface{}
 
+type FillOptions = map[string]bool
+
 func NewEmptyGMap() GMap{
 	return GMap{}
 }

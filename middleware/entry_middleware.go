@@ -30,7 +30,7 @@ func (this *EntryMiddleware) PreRequest(ctx *gin.Context){
 		if corsWhiteList[0].(string) == anyHost{
 			validHost = anyHost
 		}
-		if util.StringInList(curHost, corsWhiteList){
+		if util.NewLister(corsWhiteList).Has(curHost){
 			validHost = curHost
 		}
 		if validHost != ""{

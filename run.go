@@ -17,7 +17,7 @@ func reloadServer(){
 }
 
 func graceRun(engine *gin.Engine) {
-	go watchFs()
+	//go watchFs()
 	host := Config.GetString("web_server.host", "")
 	port := Config.GetInt("web_server.port", 8080)
 	server := &http.Server{
@@ -42,6 +42,11 @@ func graceRun(engine *gin.Engine) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		defer CloseAllDBConnections()
+		defer func() {
+			if fsWatcher != nil{
+				fsWatcher.Close()
+			}
+		}()
 		if err := server.Shutdown(ctx); err != nil {
 			Info("shutdown failed: ", err)
 		}

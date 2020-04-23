@@ -29,6 +29,9 @@ func (this *BaseError) GetData() interface{}{
 func (this *BaseError) ToString() string{
 	return fmt.Sprintf("code: %s, msg: %s", this.ErrCode, this.ErrMsg)
 }
+func (this *BaseError) Error() string{
+	return this.ToString()
+}
 func (this *BaseError) IsBusinessError() bool{
 	return this.code == SERVICE_BUSINESS_ERROR_CODE
 }

@@ -9,7 +9,7 @@ import (
 func TestDefault(t *testing.T){
 	c := new(config)
 	t.Log(Map(nil))
-	assert.Equal(t, Map(nil), c.Map)
+	assert.Equal(t, Map(nil), c.GMap)
 }
 
 func TestParseFn(t *testing.T){
@@ -34,7 +34,7 @@ func TestParseFn(t *testing.T){
 	}
 	s := parseEnvArgs(data)
 	c := new(config)
-	c.Map = s
+	c.GMap = s
 	assert.Equal(t, "prod", c.GetString("mode"))
 	assert.Equal(t, 3.14, c.GetFloat("power"))
 	assert.Equal(t, "a", c.GetString("nicer", "a"))
