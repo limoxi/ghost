@@ -1,0 +1,16 @@
+
+mode: "${MODE} || prod"
+engine_status: "${STATUS} || off"
+started: true
+power: 3.14
+nicer: "${nicer} || a"
+timeout: "${timeout} || 10.1"
+spec: "*"
+abc:
+    a: 1
+    b: B
+    c: true
+array:
+    - 1
+    - 2
+    - 3.3

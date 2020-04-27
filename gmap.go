@@ -11,7 +11,7 @@ func NewEmptyGMap() GMap{
 	return GMap{}
 }
 
-func NewGMapFromData(data map[string]interface{}) GMap{
+func NewGMapFromData(data Map) GMap{
 	return GMap(data)
 }
 
@@ -68,6 +68,8 @@ func (m GMap) GetFloat(key string, args ...float64) float64{
 	v := m.Get(key)
 	if v != nil{
 		switch v.(type) {
+		case int:
+			return float64(v.(int))
 		case string:
 			dv, _ :=  strconv.ParseFloat(v.(string), 64)
 			return dv
@@ -91,4 +93,12 @@ func (m GMap) GetBool(key string, args ...bool) bool{
 	}else{
 		return defaultVal
 	}
+}
+
+func (this *config) GetArray(key string) []interface{}{
+	return this.Get(key).([]interface{})
+}
+
+func (this *config) GetMap(key string) GMap{
+	return NewGMapFromData(this.Get(key).(Map))
 }

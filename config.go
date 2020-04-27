@@ -1,9 +1,9 @@
 package ghost
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/limoxi/ghost/utils"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
 	"path"
@@ -50,8 +50,7 @@ func findConfDir(p string, args ...int) string{
 }
 
 // load
-// 固定加载项目路径下conf文件夹中的json配置文件
-// 如果找不到，则加载自带配置文件
+// 固定加载项目路径下conf文件夹中的yaml配置文件
 func (this *config) load(){
 	workPath, err := os.Getwd()
 	if err != nil{
@@ -66,16 +65,16 @@ func (this *config) load(){
 	if this.Mode == gin.DebugMode{
 		pre = "dev"
 	}
-	filename := pre + ".conf.json"
+	filename := pre + ".conf.yaml"
 	confPath := filepath.Join(workPath, "conf", filename)
 	if utils.FileExist(confPath){
-		if err := this.parseJsonFile(confPath); err == nil{
+		if err := this.parseYamlFile(confPath); err == nil{
 			return
 		}
 	}else{
-		confPath = filepath.Join(workPath, "conf", "conf.json")
+		confPath = filepath.Join(workPath, "conf", "conf.yaml")
 		if utils.FileExist(confPath) {
-			if err := this.parseJsonFile(confPath); err == nil {
+			if err := this.parseYamlFile(confPath); err == nil {
 				return
 			}
 		}
@@ -83,22 +82,25 @@ func (this *config) load(){
 	this.setDefaultConfigData()
 }
 
-func (this *config) parseJsonFile(filename string) error{
+func (this *config) parseYamlFile(filename string) error{
 	file, err := os.Open(filename)
 	if err != nil {
+		Warn(err)
 		return err
 	}
 	defer file.Close()
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
+		Warn(err)
 		return err
 	}
 	var data Map
-	err = json.Unmarshal(content, &data)
+	err = yaml.Unmarshal(content, &data)
 	if err != nil{
+		Warn(err)
 		return err
 	}
-	this.GMap = parseEnvArgs(data)
+	this.GMap = NewGMapFromData(parseEnvArgs(data))
 	return nil
 }
 
@@ -108,9 +110,9 @@ func parseEnvArgs(data Map) Map{
 		switch v.(type) {
 		case string:
 			data[k] = parseEnvFromString(v.(string))
-		case map[string]interface{}:
+		case Map:
 			ns := k + "."
-			for ik, iv := range parseEnvArgs(v.(map[string]interface{})){
+			for ik, iv := range parseEnvArgs(v.(Map)){
 				fullKey := ns + ik
 				data[fullKey] = iv
 			}
@@ -141,12 +143,10 @@ func parseEnvFromString(str string) string{
 	return envV
 }
 
-func (this *config) GetArray(key string) []interface{}{
-	return this.Get(key).([]interface{})
-}
-
-func (this *config) GetMap(key string) GMap{
-	return NewGMapFromData(this.Get(key).(Map))
+func LoadConfigFromFile(path string) *config{
+	c := new(config)
+	c.parseYamlFile(path)
+	return c
 }
 
 func init(){

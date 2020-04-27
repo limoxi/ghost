@@ -34,8 +34,14 @@ func (this *Paginator) getPageRange() (start, end int){
 }
 
 func (this *Paginator) Paginate(db *gorm.DB) *gorm.DB{
-	db.Count(&this.totalItemCount)
-	return nil
+	db.New().Count(&this.totalItemCount)
+	// 如果浏览页数超过最大页数，则显示最后一页数据
+	if this.curPage > this.totalPage{
+		this.curPage = this.totalPage
+	}
+	_, end := this.getPageRange()
+	db.Limit(this.pageSize).Offset(end)
+	return db
 }
 
 func (this *Paginator) MockPaginate(records []interface{}) []interface{}{
