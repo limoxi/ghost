@@ -25,7 +25,7 @@ type Users struct {
 
 }
 
-func (this *Users) GetResource() string{
+func (this *Users) Resource() string{
 	return "user.users"
 }
 
@@ -49,7 +49,7 @@ func init(){
 ```
 #### api的属性和方法
 1. ghost.ApiTemplate 包装了api的各种方法
-2. GetResource() 定义了资源的路径，形式为"resource.sub_resource"，展现在url上即
+2. Resource() 定义了资源的路径，形式为"resource.sub_resource"，展现在url上即
 /resource/sub_resource/，当然此定义支持更多层级
 3. ghost.Response api支持多种响应形式，包括json、raw_string、xml、redirect，json
 格式最终会被包装成以下结构

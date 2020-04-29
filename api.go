@@ -13,7 +13,7 @@ type apiInterface interface {
 	setCtx(*gin.Context)
 	GetCtx() *gin.Context
 
-	GetResource() string
+	Resource() string
 	GetLock() string
 
 	Head() Response
@@ -59,7 +59,7 @@ func (a *ApiTemplate) Bind(obj interface{}){
 	}
 }
 
-func (a *ApiTemplate) GetResource() string{
+func (a *ApiTemplate) Resource() string{
 	panic("method not implement")
 }
 

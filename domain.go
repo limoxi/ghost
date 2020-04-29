@@ -81,3 +81,12 @@ func (this *DomainModel) NewFromDbModel(do interface{}, dbModel interface{}){
 	}
 	(this.ctx).(*gin.Context).Set("dbModel", dbModel)
 }
+
+type BasDomainRepository struct {
+	DomainObject
+	Paginator *Paginator
+}
+
+func (this *BasDomainRepository) SetPaginator(paginator *Paginator) {
+	this.Paginator = paginator
+}

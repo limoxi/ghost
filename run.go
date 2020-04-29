@@ -70,8 +70,9 @@ func parseResource(resource string) string{
 func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 	for _, r := range routers{
 		func (ir apiInterface){
-			group.Any(parseResource(ir.GetResource()), func (ctx *gin.Context){
-				Infof("coming request %s.%s", ir.GetResource(), ctx.Request.Method)
+			rs := ir.Resource()
+			group.Any(parseResource(rs), func (ctx *gin.Context){
+				Infof("coming request %s.%s", rs, ctx.Request.Method)
 				ir.setCtx(ctx)
 				var resp Response
 				switch ctx.Request.Method {
