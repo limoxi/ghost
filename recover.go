@@ -3,6 +3,7 @@ package ghost
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
 	"runtime/debug"
 )
@@ -32,6 +33,11 @@ func recovery() gin.HandlerFunc{
 					debug.PrintStack()
 				}
 				Error(fmt.Sprintf("recover from error: %s", errMsg))
+
+				if idb, ok := ctx.Get("db"); ok && idb != nil{
+					idb.(*gorm.DB).Rollback()
+					Warn("db transaction rollback")
+				}
 				ctx.JSON(SERVICE_INNER_SUCCESS_CODE, specError.GetData())
 			}
 		}()

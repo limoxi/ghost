@@ -1,6 +1,7 @@
 package ghost
 
 import (
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 )
@@ -10,11 +11,12 @@ var registeredGroupedApis = make(map[string][]apiInterface)
 
 type apiInterface interface {
 
-	setCtx(*gin.Context)
-	GetCtx() *gin.Context
+	setCtx(ctx context.Context)
+	GetCtx() context.Context
 
 	Resource() string
 	GetLock() string
+	DisableTx() bool
 
 	Head() Response
 	Options() Response
@@ -25,27 +27,29 @@ type apiInterface interface {
 }
 
 type ApiTemplate struct{
-	ctx *gin.Context
+	ctx context.Context
 	GMap
 }
 
-func (a *ApiTemplate) setCtx(ctx *gin.Context) {
+func (a *ApiTemplate) setCtx(ctx context.Context) {
 	a.ctx = ctx
 }
 
-func (a *ApiTemplate) GetCtx() *gin.Context {
+func (a *ApiTemplate) GetCtx() context.Context {
 	return a.ctx
 }
 
 // 绑定参数到struct
 func (a *ApiTemplate) Bind(obj interface{}){
-	ginContext := a.GetCtx()
+	ginContext := a.GetCtx().(*gin.Context)
 	ct := ginContext.GetHeader("Content-Type")
 	var err error
 	if ginContext.Request.Method == "GET"{
 		err = ginContext.ShouldBind(obj)
 	}else{
 		switch ct {
+		case "application/json":
+			fallthrough
 		case "application/json;charset=utf-8", "application/json;charset=UTF-8":
 			err = ginContext.ShouldBindJSON(obj)
 		default:
@@ -65,6 +69,10 @@ func (a *ApiTemplate) Resource() string{
 
 func (a *ApiTemplate) GetLock() string{
 	return ""
+}
+
+func (a *ApiTemplate) DisableTx() bool{
+	return false
 }
 
 func (a *ApiTemplate) Head() Response{

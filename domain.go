@@ -3,6 +3,7 @@ package ghost
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"reflect"
 )
 
@@ -16,6 +17,36 @@ func (c *ContextObject) SetCtx(ctx context.Context){
 
 func (c *ContextObject) GetCtx() context.Context{
 	return c.ctx
+}
+
+func (c *ContextObject) GetGinContext() *gin.Context{
+	ginCtx, ok := c.ctx.(*gin.Context)
+	if ok{
+		return ginCtx
+	}
+	return nil
+}
+
+// GetDB 尝试从context中获取db(事务), 没有则返回默认
+func (c *ContextObject) GetDB() *gorm.DB{
+	db := GetDB()
+	if c.ctx != nil{
+		if idb, ok := c.GetGinContext().Get("db"); ok && idb != nil{
+			db = idb.(*gorm.DB)
+		}
+	}
+	return db
+}
+
+func (c *ContextObject) Get(key string) interface{}{
+	if i, ok := c.GetGinContext().Get(key); ok{
+		return i
+	}
+	return nil
+}
+
+func (c *ContextObject) Set(k string, v interface{}){
+	c.GetGinContext().Set(k, v)
 }
 
 // DomainObject 领域对象(可以表示聚合根、聚合、实体、值对象和领域服务)
@@ -34,12 +65,7 @@ type DomainService struct {
 }
 
 func (this *DomainModel) GetDbModel() interface{}{
-	dbModel, ok := this.ctx.(*gin.Context).Get("dbModel")
-	if ok{
-		return dbModel
-	}else{
-		return nil
-	}
+	return this.Get("dbModel")
 }
 
 func (this *DomainModel) handleEmbedStruct(stField reflect.StructField, svField reflect.Value, dv reflect.Value){
@@ -79,7 +105,7 @@ func (this *DomainModel) NewFromDbModel(do interface{}, dbModel interface{}){
 			}
 		}
 	}
-	(this.ctx).(*gin.Context).Set("dbModel", dbModel)
+	this.Set("dbModel", dbModel)
 }
 
 type BasDomainRepository struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"net/http"
 	"os"
 	"os/signal"
@@ -73,8 +74,26 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 			rs := ir.Resource()
 			group.Any(parseResource(rs), func (ctx *gin.Context){
 				Infof("coming request %s.%s", rs, ctx.Request.Method)
-				ir.setCtx(ctx)
 				var resp Response
+				var tx *gorm.DB
+				if !ir.DisableTx(){
+					switch ctx.Request.Method {
+					case "PUT", "POST", "DELETE":
+						tx = GetDB().Begin()
+						Info("db transaction begin...")
+						defer func() {
+							if err := recover(); err != nil{
+								tx.Rollback()
+							}
+						}()
+						if err := tx.Error; err != nil{
+							panic(err)
+						}
+						ctx.Set("db", tx)
+					}
+				}
+
+				ir.setCtx(ctx)
 				switch ctx.Request.Method {
 				case "HEAD":
 					resp = ir.Head()
@@ -92,6 +111,13 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 					ctx.String(404, "","http method not implemented")
 					return
 				}
+
+				if tx != nil{
+					if err := tx.Commit().Error; err != nil{
+						panic(err)
+					}
+				}
+
 				switch resp.GetDataType() {
 				case "json":
 					ctx.JSON(SERVICE_INNER_SUCCESS_CODE, resp.GetData())
