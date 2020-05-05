@@ -9,7 +9,7 @@
 > api层对外提供服务的能力，并对各种协议进行适配，支持基于http的restful api，
 websocket和rpc调用
 
-> api层的设计采用了一种称为ROA的设计，每一个接口都是一种资源，针对每个资源的
+> api层采用了一种称为ROA的设计，每一个接口都是一种资源，针对每个资源的
 查、插、改、删分别对应了Get、Put、Post、Delete4种方法，当然api层还支持Head和Option
 方法
 例：

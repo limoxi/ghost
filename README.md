@@ -16,21 +16,32 @@
 go get -u github.com/limoxi/ghost
 ```
 
+### 脚手架
+> 使用glo生成项目框架以及添加资源
+```shell script
+pip install -U git+https://github.com/limoxi/glo.git
+
+cd ~/workspace
+glo init
+
+```
+
 ### 使用
 >[设计理念&使用规范](./guide_lines.md)
+>[glo: 框架生成器](https://github.com/limoxi/glo)
 
 ### TODO
 - [ ] 支持多种服务调用, restApi, gRPC, websocket ...
 - [x] resource api设计
 - [x] 中间件设计
 - [x] orm
-- [ ] 数据库事务应用策略
+- [x] 数据库事务应用策略
 - [x] 配置文件设计
 - [x] 异常处理
+- [x] DDD规范
 - [ ] 分布式锁
-- [ ] 日志
+- [x] 日志
 - [ ] docker部署
-- [ ] 代码规范
 
 > [升级日志](./update_log.md)
 
