@@ -3,6 +3,7 @@ package ghost
 import (
 	"context"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"net/http"
@@ -17,6 +18,13 @@ func reloadServer(){
 
 }
 
+func beforeTerminate(){
+	CloseAllDBConnections()
+	if isEnableSentry(){
+		sentry.Flush(2 * time.Second)
+	}
+}
+
 func graceRun(engine *gin.Engine) {
 	//go watchFs()
 	host := Config.GetString("web_server.host", "")
@@ -29,7 +37,7 @@ func graceRun(engine *gin.Engine) {
 	Info("server start: ", server.Addr)
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			CloseAllDBConnections()
+			beforeTerminate()
 			Panicf("listen: %s", err)
 		}
 	}()
@@ -42,7 +50,7 @@ func graceRun(engine *gin.Engine) {
 		Info("Shutdown Server ...")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		defer CloseAllDBConnections()
+		defer beforeTerminate()
 		defer func() {
 			if fsWatcher != nil{
 				fsWatcher.Close()
