@@ -1,6 +1,7 @@
 package ghost
 
 import (
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -42,5 +43,26 @@ func recovery() gin.HandlerFunc{
 			}
 		}()
 		ctx.Next()
+	}
+}
+
+func RecoverFromCronTaskPanic(ctx context.Context) {
+	o := GetDBFromCtx(ctx)
+	if err := recover(); err!=nil{
+		Warn("recover from cron task panic...")
+		if o != nil{
+			o.Rollback()
+			Warn("[ORM] rollback transaction for cron task")
+		}
+
+		{
+			// 推送日志到sentry
+			errMsg := err.(error).Error()
+			if be, ok := err.(*BaseError); ok{
+				errMsg = fmt.Sprintf("%s - %s", be.ErrCode, be.ErrMsg)
+			}
+			Error(errMsg)
+			//CaptureTaskErrorToSentry(ctx, errMsg)
+		}
 	}
 }
