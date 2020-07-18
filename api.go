@@ -53,11 +53,10 @@ func (a *ApiTemplate) Bind(obj interface{}){
 		case "application/json;charset=utf-8", "application/json;charset=UTF-8":
 			err = ginContext.ShouldBindJSON(obj)
 		default:
-			Infof("coming request Content-Type: %s", ct)
+			Warnf("coming request Content-Type: %s", ct)
 			err = ginContext.ShouldBind(obj)
 		}
 	}
-
 	if err != nil{
 		panic(fmt.Sprintf("invalid params: %s", err))
 	}

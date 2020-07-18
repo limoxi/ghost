@@ -89,11 +89,6 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 					case "PUT", "POST", "DELETE":
 						tx = GetDB().Begin()
 						Info("db transaction begin...")
-						defer func() {
-							if err := recover(); err != nil{
-								tx.Rollback()
-							}
-						}()
 						if err := tx.Error; err != nil{
 							panic(err)
 						}
