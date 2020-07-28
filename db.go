@@ -3,7 +3,6 @@ package ghost
 import (
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"log"
@@ -101,7 +100,7 @@ func GetDB(args ...string) *gorm.DB{
 
 func GetDBFromCtx(ctx context.Context, args ...string) *gorm.DB{
 	db := GetDB(args...)
-	if idb, ok := ctx.(*gin.Context).Get("db"); ok{
+	if idb := ctx.Value("db"); idb != nil{
 		db = idb.(*gorm.DB)
 	}
 	return db
