@@ -47,11 +47,12 @@ func recovery() gin.HandlerFunc{
 }
 
 func RecoverFromCronTaskPanic(ctx context.Context) {
-	o := GetDBFromCtx(ctx)
-	if err := recover(); err!=nil{
-		Warn("recover from cron task panic...")
-		if o != nil{
-			o.Rollback()
+	db := GetDBFromCtx(ctx)
+	if err := recover(); err != nil{
+		Error(string(debug.Stack()))
+		Warn("recover from cron task panic...", err)
+		if db != nil{
+			db.Rollback()
 			Warn("[ORM] rollback transaction for cron task")
 		}
 

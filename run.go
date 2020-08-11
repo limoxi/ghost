@@ -119,6 +119,7 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 					if err := tx.Commit().Error; err != nil{
 						panic(err)
 					}
+					Info("db transaction committed...")
 				}
 
 				switch resp.GetDataType() {

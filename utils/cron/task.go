@@ -8,7 +8,7 @@ import (
 )
 
 type taskInterface interface {
-	Run(*TaskContext) error
+	Run(*TaskContext)
 	GetName() string
 	IsEnableTx() bool
 }
@@ -17,8 +17,8 @@ type CronTask struct {
 	name string
 }
 
-func (t *CronTask) Run(taskContext *TaskContext) error{
-	return errors.New("Run not implemented")
+func (t *CronTask) Run(taskContext *TaskContext){
+	panic(errors.New("not implemented"))
 }
 
 func (t *CronTask) GetName() string{
@@ -92,19 +92,23 @@ func NewPipe(chCap int) *Pipe{
 }
 
 type TaskContext struct{
-	orm *gorm.DB
+	db *gorm.DB
 	ctx context.Context
 }
 
-func (this *TaskContext) Init(ctx context.Context, o *gorm.DB){
+func (this *TaskContext) Init(ctx context.Context, db *gorm.DB){
 	this.ctx = ctx
-	this.orm = o
+	this.db = db
 }
 
-func (this *TaskContext) GetOrm() *gorm.DB{
-	return this.orm
+func (this *TaskContext) GetDb() *gorm.DB{
+	return this.db
 }
 
 func (this *TaskContext) GetCtx() context.Context{
 	return this.ctx
+}
+
+func (this *TaskContext) SetCtx(ctx context.Context) {
+	this.ctx = ctx
 }

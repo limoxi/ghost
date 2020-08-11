@@ -19,10 +19,10 @@ var name2task = make(map[string]*cron)
 func newTaskCtx() *TaskContext{
 	inst := new(TaskContext)
 	ctx := context.Background()
-	o := ghost.GetDB()
-	ctx = context.WithValue(ctx, "orm", o)
+	db := ghost.GetDB()
+	ctx = context.WithValue(ctx, "db", db)
 
-	inst.Init(ctx, o)
+	inst.Init(ctx, db)
 	return inst
 }
 
@@ -30,24 +30,32 @@ func taskWrapper(task taskInterface) TaskFunc{
 
 	return func() error{
 		taskCtx := newTaskCtx()
-		o := taskCtx.GetOrm()
+		db := taskCtx.GetDb()
 		ctx := taskCtx.GetCtx()
 
-		defer ghost.RecoverFromCronTaskPanic(ctx)
-		var fnErr error
 		taskName := task.GetName()
 		startTime := time.Now()
 		ghost.Info(fmt.Sprintf("[%s] run...", taskName))
-		if o != nil && task.IsEnableTx(){
-			o.Begin()
-			fnErr = task.Run(taskCtx)
-			o.Commit()
+		if db != nil && task.IsEnableTx(){
+			tx := db.Begin()
+			if err := tx.Error; err != nil{
+				panic(err)
+			}
+			ctx = context.WithValue(ctx, "db", tx)
+			defer ghost.RecoverFromCronTaskPanic(ctx)
+			taskCtx.SetCtx(ctx)
+
+			task.Run(taskCtx)
+			if err := tx.Commit().Error; err != nil{
+				ghost.Error(err)
+			}
 		}else{
-			fnErr = task.Run(taskCtx)
+			defer ghost.RecoverFromCronTaskPanic(ctx)
+			task.Run(taskCtx)
 		}
 		dur := time.Since(startTime)
 		ghost.Info(fmt.Sprintf("[%s] done, cost %g s", taskName, dur.Seconds()))
-		return fnErr
+		return nil
 	}
 }
 
