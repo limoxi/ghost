@@ -33,11 +33,6 @@ func (t *CronTask) IsEnableTx() bool{
 	return true
 }
 
-func NewCronTask(name string) CronTask{
-	t := CronTask{name:name}
-	return t
-}
-
 type pipeInterface interface {
 	AddData(data interface{}) error
 	GetData() interface{}
@@ -69,26 +64,24 @@ func (p *Pipe) GetCap() int{
 	return p.chCap
 }
 
+func (p *Pipe) Init(cap int){
+	p.chCap = cap
+	p.ch = make(chan interface{}, chCap)
+}
+
 // GetConsumerCount 消费者数量
 // 默认为通道容量十分之一
 func (p *Pipe) GetConsumerCount() int{
 	return int(math.Ceil(float64(p.GetCap())/10))
 }
 
-func (p *Pipe) RunConsumer() error{
+func (p *Pipe) RunConsumer(data interface{}, taskCtx *TaskContext){
 	return errors.New("RunConsumer not implemented")
 }
 
 // EnableParallel 启用并行，默认启用
 func (p *Pipe) EnableParallel() bool{
 	return true
-}
-
-func NewPipe(chCap int) *Pipe{
-	p := &Pipe{}
-	p.chCap = chCap
-	p.ch = make(chan interface{}, chCap)
-	return p
 }
 
 type TaskContext struct{
