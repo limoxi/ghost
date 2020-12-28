@@ -1,9 +1,8 @@
 module github.com/limoxi/ghost
 
-go 1.13
+go 1.15
 
 require (
-	github.com/fsnotify/fsnotify v1.4.7
 	github.com/getsentry/sentry-go v0.6.1
 	github.com/gin-gonic/gin v1.5.0
 	github.com/go-playground/universal-translator v0.17.0 // indirect

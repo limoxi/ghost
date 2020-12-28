@@ -14,10 +14,6 @@ import (
 	"time"
 )
 
-func reloadServer(){
-
-}
-
 func beforeTerminate(){
 	CloseAllDBConnections()
 	if isEnableSentry(){
@@ -26,7 +22,6 @@ func beforeTerminate(){
 }
 
 func graceRun(engine *gin.Engine) {
-	//go watchFs()
 	host := Config.GetString("web_server.host", "")
 	port := Config.GetInt("web_server.port", 8080)
 	server := &http.Server{
@@ -51,21 +46,9 @@ func graceRun(engine *gin.Engine) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		defer beforeTerminate()
-		defer func() {
-			if fsWatcher != nil{
-				fsWatcher.Close()
-			}
-		}()
 		if err := server.Shutdown(ctx); err != nil {
 			Info("shutdown failed: ", err)
 		}
-	}
-}
-
-// 开发环境下监听项目文件变化，触发signal
-func watchFs(){
-	if Config.Mode == gin.DebugMode{
-		watchProject()
 	}
 }
 

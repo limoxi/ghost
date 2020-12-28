@@ -66,7 +66,7 @@ func (p *Pipe) GetCap() int{
 
 func (p *Pipe) Init(cap int){
 	p.chCap = cap
-	p.ch = make(chan interface{}, chCap)
+	p.ch = make(chan interface{}, cap)
 }
 
 // GetConsumerCount 消费者数量
@@ -76,7 +76,7 @@ func (p *Pipe) GetConsumerCount() int{
 }
 
 func (p *Pipe) RunConsumer(data interface{}, taskCtx *TaskContext){
-	return errors.New("RunConsumer not implemented")
+	panic(errors.New("RunConsumer not implemented"))
 }
 
 // EnableParallel 启用并行，默认启用
