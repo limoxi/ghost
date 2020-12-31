@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"reflect"
 	"strings"
 	"syscall"
 	"time"
@@ -59,15 +60,41 @@ func parseResource(resource string) string{
 	return fmt.Sprintf("/%s/", strings.Replace(resource, ".", "/", -1))
 }
 
+func bindRestParams(apiHandler apiInterface){
+	elemVal := reflect.ValueOf(apiHandler).Elem()
+	elemType := reflect.TypeOf(apiHandler).Elem()
+
+	numOfFields := elemVal.NumField()
+	for i := 0; i < numOfFields; i++ {
+		fieldType := elemType.Field(i)
+		switch fieldType.Name {
+		case "GetParams", "PutParams", "PostParams", "DeleteParams":
+			elemField := elemVal.FieldByName(fieldType.Name)
+			Warn(elemField, "11111111")
+			if elemField.CanSet() {
+				ei := elemField.Interface()
+				apiHandler.Bind(ei)
+				elemField.Set(reflect.ValueOf(ei))
+			}
+		default:
+			Infof("params: ", fieldType.Name)
+			continue
+		}
+	}
+}
+
 func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 	for _, r := range routers{
 		func (ir apiInterface){
 			rs := ir.Resource()
+			t := reflect.Indirect(reflect.ValueOf(ir)).Type()
 			group.Any(parseResource(rs), func (ctx *gin.Context){
 				Infof("coming request %s.%s", rs, ctx.Request.Method)
+				apiHandler := reflect.New(t).Interface().(apiInterface)
+
 				var resp Response
 				var tx *gorm.DB
-				if !ir.DisableTx(){
+				if !apiHandler.DisableTx(){
 					switch ctx.Request.Method {
 					case "PUT", "POST", "DELETE":
 						tx = GetDB().Begin()
@@ -79,20 +106,21 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 					}
 				}
 
-				ir.setCtx(ctx)
+				apiHandler.setCtx(ctx)
+				bindRestParams(apiHandler)
 				switch ctx.Request.Method {
 				case "HEAD":
-					resp = ir.Head()
+					resp = apiHandler.Head()
 				case "OPTIONS":
-					resp = ir.Options()
+					resp = apiHandler.Options()
 				case "", "GET":
-					resp = ir.Get()
+					resp = apiHandler.Get()
 				case "PUT":
-					resp = ir.Put()
+					resp = apiHandler.Put()
 				case "POST":
-					resp = ir.Post()
+					resp = apiHandler.Post()
 				case "DELETE":
-					resp = ir.Delete()
+					resp = apiHandler.Delete()
 				default:
 					ctx.String(404, "","http method not implemented")
 					return

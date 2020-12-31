@@ -17,6 +17,7 @@ type apiInterface interface {
 	Resource() string
 	GetLock() string
 	DisableTx() bool
+	Bind(interface{})
 
 	Head() Response
 	Options() Response
