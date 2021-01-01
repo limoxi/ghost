@@ -60,26 +60,26 @@ func parseResource(resource string) string{
 	return fmt.Sprintf("/%s/", strings.Replace(resource, ".", "/", -1))
 }
 
-func bindRestParams(apiHandler apiInterface){
+func bindRestParams(paramsName string, apiHandler apiInterface, ginContext *gin.Context){
 	elemVal := reflect.ValueOf(apiHandler).Elem()
-	elemType := reflect.TypeOf(apiHandler).Elem()
+	elemField := elemVal.FieldByName(paramsName)
+	if elemField.CanSet() {
+		newParamsVal := reflect.New(elemField.Type().Elem())
+		bindObj :=  newParamsVal.Interface()
 
-	numOfFields := elemVal.NumField()
-	for i := 0; i < numOfFields; i++ {
-		fieldType := elemType.Field(i)
-		switch fieldType.Name {
-		case "GetParams", "PutParams", "PostParams", "DeleteParams":
-			elemField := elemVal.FieldByName(fieldType.Name)
-			Warn(elemField, "11111111")
-			if elemField.CanSet() {
-				ei := elemField.Interface()
-				apiHandler.Bind(ei)
-				elemField.Set(reflect.ValueOf(ei))
-			}
-		default:
-			Infof("params: ", fieldType.Name)
-			continue
+		ct := ginContext.GetHeader("Content-Type")
+		var err error
+
+		if strings.HasPrefix(ct, "application/json"){
+			err = ginContext.ShouldBindJSON(bindObj)
+		}else{
+			err = ginContext.ShouldBind(bindObj)
 		}
+		if err != nil{
+			panic(fmt.Sprintf("invalid params: %s", err))
+		}
+
+		elemField.Set(newParamsVal)
 	}
 }
 
@@ -107,19 +107,22 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 				}
 
 				apiHandler.setCtx(ctx)
-				bindRestParams(apiHandler)
 				switch ctx.Request.Method {
 				case "HEAD":
 					resp = apiHandler.Head()
 				case "OPTIONS":
 					resp = apiHandler.Options()
 				case "", "GET":
+					bindRestParams("GetParams", apiHandler, ctx)
 					resp = apiHandler.Get()
 				case "PUT":
+					bindRestParams("PutParams", apiHandler, ctx)
 					resp = apiHandler.Put()
 				case "POST":
+					bindRestParams("PostParams", apiHandler, ctx)
 					resp = apiHandler.Post()
 				case "DELETE":
+					bindRestParams("DeleteParams", apiHandler, ctx)
 					resp = apiHandler.Delete()
 				default:
 					ctx.String(404, "","http method not implemented")

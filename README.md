@@ -30,11 +30,14 @@ glo init
 >[设计理念&使用规范](./guide_lines.md)
 >[glo: 框架生成器](https://github.com/limoxi/glo)
 
+### 工程化目标
+- 
+
 ### TODO
 - [ ] 支持多种服务调用, restApi, gRPC, websocket ...
 - [x] resource api设计
 - [x] 中间件设计
-- [x] orm
+- [x] orm（不采用依赖倒置原则进行接口设计，因为大部分场景下存储层的选择是固定的且不会改变）
 - [x] 数据库事务应用策略
 - [x] 配置文件设计
 - [x] 异常处理
@@ -42,6 +45,7 @@ glo init
 - [ ] 分布式锁
 - [x] 日志
 - [ ] docker部署
+- [ ] 自动生成api文档
 
 > [升级日志](./update_log.md)
 

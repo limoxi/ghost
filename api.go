@@ -2,8 +2,6 @@ package ghost
 
 import (
 	"context"
-	"fmt"
-	"github.com/gin-gonic/gin"
 )
 
 var registeredApis = make([]apiInterface, 0)
@@ -17,7 +15,6 @@ type apiInterface interface {
 	Resource() string
 	GetLock() string
 	DisableTx() bool
-	Bind(interface{})
 
 	Head() Response
 	Options() Response
@@ -38,29 +35,6 @@ func (a *ApiTemplate) setCtx(ctx context.Context) {
 
 func (a *ApiTemplate) GetCtx() context.Context {
 	return a.ctx
-}
-
-// 绑定参数到struct
-func (a *ApiTemplate) Bind(obj interface{}){
-	ginContext := a.GetCtx().(*gin.Context)
-	ct := ginContext.GetHeader("Content-Type")
-	var err error
-	if ginContext.Request.Method == "GET"{
-		err = ginContext.ShouldBind(obj)
-	}else{
-		switch ct {
-		case "application/json":
-			fallthrough
-		case "application/json;charset=utf-8", "application/json;charset=UTF-8":
-			err = ginContext.ShouldBindJSON(obj)
-		default:
-			Warnf("coming request Content-Type: %s", ct)
-			err = ginContext.ShouldBind(obj)
-		}
-	}
-	if err != nil{
-		panic(fmt.Sprintf("invalid params: %s", err))
-	}
 }
 
 func (a *ApiTemplate) Resource() string{
