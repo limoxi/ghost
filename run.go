@@ -148,10 +148,6 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 }
 
 func RunWebServer(){
-	switch Config.Mode {
-
-	}
-	gin.SetMode(gin.DebugMode)
 	engine := gin.New()
 	engine.Use(recovery())
 
@@ -172,11 +168,12 @@ func RunWebServer(){
 		bindRouter(engine.Group(groupName), apis)
 	}
 	bindRouter(&engine.RouterGroup, registeredApis)
+	
+	// 开发环境下生成接口文档
+	if Config.Mode == gin.DebugMode{
+		genApiDoc()
+	}
 
 	//engine.Run()
 	graceRun(engine)
-}
-
-func init(){
-
 }
