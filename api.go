@@ -84,3 +84,11 @@ func RegisterGroupedApi(groupName string, r apiInterface){
 		registeredGroupedApis[groupName] = []apiInterface{r}
 	}
 }
+
+func getAllApis() []apiInterface{
+	apis := append([]apiInterface{}, registeredApis...)
+	for _, as := range registeredGroupedApis{
+		apis = append(apis, as...)
+	}
+	return apis
+}

@@ -1,24 +1,34 @@
 package ghost
 
 import (
+	"bytes"
+	"os"
+	"os/exec"
 	"reflect"
+	"strings"
+	"text/template"
 )
 
 var docTmpl = `
-### 资源名
+# {{.ServiceName}} API文档 - 基于Ghost框架
 
-- &rq;{{.Resource}}&rq;
+[[toc]]
 
-##### 资源描述
-
-- &rq;{{.ResourceDesc}}&rq;
-
-{{range .Methods}}
-#### 请求方式
+{{range .Resources}}
+## 资源名
 
 - &rq;{{.Name}}&rq;
 
-#### 请求参数
+### 资源描述
+
+- &rq;{{.Desc}}&rq;
+
+{{range .Methods}}
+### 请求方法
+
+- &rq;{{.Name}}&rq;
+
+### 请求参数
 
 |参数名|必选|类型|说明|
 |:----    |:---|:----- |-----   |
@@ -26,7 +36,7 @@ var docTmpl = `
 |{{.Field}} |{{.Required}}  |{{.FieldType}} |{{.FieldDesc}}   |
 {{end}}
 
-#### 响应数据
+### 响应数据
 
 |参数名|类型|说明|
 |:----    |:----- |-----   |
@@ -34,44 +44,122 @@ var docTmpl = `
 |{{.Field}} |{{.FieldType}} |{{.FieldDesc}}   |
 {{end}}
 
-#### 响应示例
+### 响应示例
 &rq;&rq;&rq;json
 {{.RespExample}}
 &rq;&rq;&rq;
 {{end}}
+
+{{end}}
 `
 
-type docMethodParams struct {
+type structFieldInfo struct {
 	Field string
 	FieldType string
 	FieldDesc string
 	Required string
 }
 
-type docMethods struct {
+type methodInfo struct {
 	Name string
-	RequestParams []*docMethodParams
-	RespParams []*docMethodParams
+	RequestParams []*structFieldInfo
+	RespParams []*structFieldInfo
 	RespExample string
 }
 
-type docParams struct {
-	Resource string
-	ResourceDesc string
-	Methods []*docMethods
+type resourceInfo struct {
+	Name string
+	Desc string
+	Methods []*methodInfo
 
 }
 
-// 生成markdown格式的接口文档
-func genApiDoc() {
-	for _, inst := range registeredApis{
-		instType := reflect.TypeOf(inst).Elem()
-		Info(instType.Name(), inst.Resource(), "00000000000000", instType.PkgPath())
-		//instVal := reflect.ValueOf(inst).Elem()
+type docParams struct {
+	ServiceName string
+	Resources []*resourceInfo
+}
 
-		for num := 0; num < instType.NumField(); num++{
-			field := instType.Field(num)
-			Info(field.Name, field.Tag, "1111111111111")
+var methodParamNames = []string{"GetParams", "PutParams", "PostParams", "DeleteParams"}
+
+func getStructInfo(sf reflect.StructField) []*structFieldInfo{
+	return nil
+}
+
+// 生成markdown格式的接口文档
+func GenApiDoc() {
+	resources := collectResources()
+	content := parseContent(resources)
+	genMdFile(content)
+	build()
+}
+
+func collectResources() []*resourceInfo {
+	resources := make([]*resourceInfo, 0)
+	for _, inst := range getAllApis() {
+		instType := reflect.TypeOf(inst).Elem()
+		methods := make([]*methodInfo, 0)
+		resource := &resourceInfo{
+			Name: inst.Resource(),
+			Desc: instType.PkgPath() + instType.Name(),
 		}
+
+		for _, methodParamName := range methodParamNames {
+			if field, exist := instType.FieldByName(methodParamName); exist{
+				methods = append(methods, &methodInfo{
+					Name: field.Name,
+					RequestParams: getStructInfo(field),
+					RespParams: getStructInfo(field),
+					RespExample: "",
+				})
+			}
+		}
+
+		resource.Methods = methods
+		resources = append(resources, resource)
+	}
+	return resources
+}
+
+func parseContent(resources []*resourceInfo) string{
+	tmpl, err := template.New("doc").Parse(docTmpl)
+	if err != nil{
+		Error(err)
+		panic(NewBusinessError("invalid_tmpl", "模板字符串错误"))
+	}
+	var contentBuffer bytes.Buffer
+	err = tmpl.Execute(&contentBuffer, &docParams{
+		ServiceName: "xxx",
+		Resources: resources,
+	})
+	if err != nil{
+		Error(err)
+		panic(NewBusinessError("parse_tmpl_failed", "渲染模板失败"))
+	}
+	content := contentBuffer.String()
+	return strings.ReplaceAll(content, "&rq;", "`")
+}
+
+func genMdFile(content string){
+	f,err := os.Create( "README.md" )
+
+	defer f.Close()
+
+	if err != nil {
+		Error(err)
+		panic(NewSystemError("create_file:failed", "创建文件失败"))
+	}
+
+	_, err = f.Write([]byte(content))
+	if err != nil {
+		Error(err)
+		panic(NewSystemError("write_file:failed", "写文件失败"))
+	}
+}
+
+func build(){
+	err := exec.Command("yarn", "run", "build").Run()
+	if err != nil {
+		Error(err)
+		panic(NewSystemError("run_command:failed", "执行命令失败"))
 	}
 }

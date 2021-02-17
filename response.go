@@ -1,5 +1,8 @@
 package ghost
 
+const RESPONSE_TYPE_JSON = "json"
+const RESPONSE_TYPE_RAW = "raw"
+
 type Response interface {
 	GetCode() int
 	GetData() interface{}

@@ -2,10 +2,12 @@ package ghost
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -75,7 +77,7 @@ func bindRestParams(paramsName string, apiHandler apiInterface, ginContext *gin.
 		}else{
 			err = ginContext.ShouldBind(bindObj)
 		}
-		if err != nil{
+		if err != nil && err.Error() != "EOF"{
 			panic(fmt.Sprintf("invalid params: %s", err))
 		}
 
@@ -100,7 +102,7 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 						tx = GetDB().Begin()
 						Info("db transaction begin...")
 						if err := tx.Error; err != nil{
-							panic(err)
+							Panic(err)
 						}
 						ctx.Set("db", tx)
 					}
@@ -131,20 +133,40 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 
 				if tx != nil{
 					if err := tx.Commit().Error; err != nil{
-						panic(err)
+						Panic(err)
 					}
 					Info("db transaction committed...")
 				}
-
-				switch resp.GetDataType() {
-				case "json":
-					ctx.JSON(SERVICE_INNER_SUCCESS_CODE, resp.GetData())
-				default:
-					ctx.String(SERVICE_INNER_SUCCESS_CODE, "","empty response")
+				if resp == nil{
+					ctx.JSON(SERVICE_INNER_SUCCESS_CODE, Map{
+						"code": SERVICE_INNER_SUCCESS_CODE,
+						"state": "success",
+						"data": nil,
+					})
+				}else{
+					switch resp.GetDataType() {
+					case "json":
+						ctx.JSON(SERVICE_INNER_SUCCESS_CODE, resp.GetData())
+					default:
+						ctx.String(SERVICE_INNER_SUCCESS_CODE, "","empty response")
+					}
 				}
 			})
 		}(r)
 	}
+}
+
+func bindDocRouter(group *gin.RouterGroup){
+	group.GET("/api/doc/", func (ctx *gin.Context){
+		Info("coming request api.doc", ctx.Request.Method)
+		contents, err := ioutil.ReadFile("./update_log.md")
+		if err != nil{
+			panic(errors.New(fmt.Sprintf("gen doc failed: %s", err.Error())))
+		}
+
+		ctx.Header("Content-Type", "text/html; charset=UTF-8")
+		ctx.String(SERVICE_INNER_SUCCESS_CODE, "%s", string(contents))
+	})
 }
 
 func RunWebServer(){
@@ -167,11 +189,13 @@ func RunWebServer(){
 	for groupName, apis := range registeredGroupedApis{
 		bindRouter(engine.Group(groupName), apis)
 	}
-	bindRouter(&engine.RouterGroup, registeredApis)
-	
+
+	defaultGroup := &engine.RouterGroup
+	bindRouter(defaultGroup, registeredApis)
+
 	// 开发环境下生成接口文档
 	if Config.Mode == gin.DebugMode{
-		genApiDoc()
+		//GenApiDoc()
 	}
 
 	//engine.Run()

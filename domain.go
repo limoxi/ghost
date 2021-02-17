@@ -49,19 +49,14 @@ func (c *ContextObject) Set(k string, v interface{}){
 	c.GetGinContext().Set(k, v)
 }
 
-// DomainObject 领域对象(可以表示聚合根、聚合、实体、值对象和领域服务)
-type DomainObject struct{
-	ContextObject
-}
-
 // DomainModel 领域模型
 type DomainModel struct{
-	DomainObject
+	ContextObject
 }
 
 // DomainService 领域服务
 type DomainService struct {
-	DomainObject
+	ContextObject
 }
 
 func (this *DomainModel) GetDbModel() interface{}{
@@ -109,7 +104,7 @@ func (this *DomainModel) NewFromDbModel(do interface{}, dbModel interface{}){
 }
 
 type BasDomainRepository struct {
-	DomainObject
+	ContextObject
 	Paginator *Paginator
 }
 

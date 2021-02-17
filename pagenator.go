@@ -56,7 +56,7 @@ func (this *Paginator) MockPaginate(records []interface{}) []interface{}{
 	return records[start: end]
 }
 
-func (this *Paginator) ToResultMap() map[string]int{
+func (this *Paginator) ToMap() map[string]int{
 	return map[string]int{
 		"cur_page": this.curPage,
 		"page_size": this.pageSize,
