@@ -37,7 +37,7 @@ func findConfDir(p string, args ...int) string{
 	}
 	ds, err := ioutil.ReadDir(p)
 	if err != nil{
-		Panic(err)
+		panic(err)
 	}
 	for _, d := range ds{
 		if d.Name() == "conf"{

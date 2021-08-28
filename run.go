@@ -36,7 +36,7 @@ func graceRun(engine *gin.Engine) {
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			beforeTerminate()
-			Panicf("listen: %s", err)
+			panic(fmt.Sprintf("listen: %s", err))
 		}
 	}()
 
@@ -66,6 +66,7 @@ func bindRestParams(paramsName string, apiHandler apiInterface, ginContext *gin.
 	elemVal := reflect.ValueOf(apiHandler).Elem()
 	elemField := elemVal.FieldByName(paramsName)
 	if elemField.CanSet() {
+		Info("==============", elemField.Type())
 		newParamsVal := reflect.New(elemField.Type().Elem())
 		bindObj :=  newParamsVal.Interface()
 
@@ -102,7 +103,7 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 						tx = GetDB().Begin()
 						Info("db transaction begin...")
 						if err := tx.Error; err != nil{
-							Panic(err)
+							panic(err)
 						}
 						ctx.Set("db", tx)
 					}
@@ -133,7 +134,7 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 
 				if tx != nil{
 					if err := tx.Commit().Error; err != nil{
-						Panic(err)
+						panic(err)
 					}
 					Info("db transaction committed...")
 				}

@@ -33,13 +33,14 @@ func recovery() gin.HandlerFunc{
 				if Config.Mode == gin.DebugMode{
 					debug.PrintStack()
 				}
-				Error(fmt.Sprintf("recover from error: %s", errMsg))
+				Error(fmt.Sprintf("recover from panic: %s", errMsg))
 
 				if idb, ok := ctx.Get("db"); ok && idb != nil{
 					idb.(*gorm.DB).Rollback()
 					Warn("db transaction rollback")
 				}
 				ctx.JSON(SERVICE_INNER_SUCCESS_CODE, specError.GetData())
+				ctx.Abort()
 			}
 		}()
 		ctx.Next()
