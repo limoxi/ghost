@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"runtime/debug"
 )
 
-func recovery() gin.HandlerFunc{
+func recovery() gin.HandlerFunc {
 	Info("recover func loaded...")
-	return func (ctx *gin.Context){
+	return func(ctx *gin.Context) {
 		defer func() {
-			if err := recover(); err != nil{
+			if err := recover(); err != nil {
 				errMsg := ""
 				var specError *BaseError
 				switch err.(type) {
@@ -30,12 +30,12 @@ func recovery() gin.HandlerFunc{
 					errMsg = err.(error).Error()
 					specError = DefaultError(errMsg)
 				}
-				if Config.Mode == gin.DebugMode{
+				if Config.Mode == gin.DebugMode {
 					debug.PrintStack()
 				}
 				Error(fmt.Sprintf("recover from panic: %s", errMsg))
 
-				if idb, ok := ctx.Get("db"); ok && idb != nil{
+				if idb, ok := ctx.Get("db"); ok && idb != nil {
 					idb.(*gorm.DB).Rollback()
 					Warn("db transaction rollback")
 				}
@@ -49,10 +49,10 @@ func recovery() gin.HandlerFunc{
 
 func RecoverFromCronTaskPanic(ctx context.Context) {
 	db := GetDBFromCtx(ctx)
-	if err := recover(); err != nil{
+	if err := recover(); err != nil {
 		Error(string(debug.Stack()))
 		Warn("recover from cron task panic...", err)
-		if db != nil{
+		if db != nil {
 			db.Rollback()
 			Warn("[ORM] rollback transaction for cron task")
 		}
@@ -60,7 +60,7 @@ func RecoverFromCronTaskPanic(ctx context.Context) {
 		{
 			// 推送日志到sentry
 			errMsg := err.(error).Error()
-			if be, ok := err.(*BaseError); ok{
+			if be, ok := err.(*BaseError); ok {
 				errMsg = fmt.Sprintf("%s - %s", be.ErrCode, be.ErrMsg)
 			}
 			Error(errMsg)

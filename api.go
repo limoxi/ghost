@@ -9,7 +9,7 @@ var registeredGroupedApis = make(map[string][]apiInterface)
 
 type apiInterface interface {
 
-	setCtx(ctx context.Context)
+	SetCtx(ctx context.Context)
 	GetCtx() context.Context
 
 	Resource() string
@@ -25,16 +25,8 @@ type apiInterface interface {
 }
 
 type ApiTemplate struct{
-	ctx context.Context
+	ContextObject
 	GMap
-}
-
-func (a *ApiTemplate) setCtx(ctx context.Context) {
-	a.ctx = ctx
-}
-
-func (a *ApiTemplate) GetCtx() context.Context {
-	return a.ctx
 }
 
 func (a *ApiTemplate) Resource() string{

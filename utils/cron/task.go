@@ -3,7 +3,7 @@ package cron
 import (
 	"context"
 	"errors"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 	"math"
 )
 
@@ -17,11 +17,11 @@ type CronTask struct {
 	name string
 }
 
-func (t *CronTask) Run(taskContext *TaskContext){
+func (t *CronTask) Run(taskContext *TaskContext) {
 	panic(errors.New("not implemented"))
 }
 
-func (t *CronTask) GetName() string{
+func (t *CronTask) GetName() string {
 	return t.name
 }
 
@@ -29,7 +29,7 @@ func (t *CronTask) SetName(name string) {
 	t.name = name
 }
 
-func (t *CronTask) IsEnableTx() bool{
+func (t *CronTask) IsEnableTx() bool {
 	return true
 }
 
@@ -42,16 +42,16 @@ type pipeInterface interface {
 	EnableParallel() bool
 }
 
-type Pipe struct{
-	ch chan interface{}
+type Pipe struct {
+	ch    chan interface{}
 	chCap int
 }
 
-func (p *Pipe) GetData() interface{}{
-	return <- p.ch
+func (p *Pipe) GetData() interface{} {
+	return <-p.ch
 }
 
-func (p *Pipe) AddData(data interface{}) error{
+func (p *Pipe) AddData(data interface{}) error {
 	select {
 	case p.ch <- data:
 	default:
@@ -60,45 +60,45 @@ func (p *Pipe) AddData(data interface{}) error{
 	return nil
 }
 
-func (p *Pipe) GetCap() int{
+func (p *Pipe) GetCap() int {
 	return p.chCap
 }
 
-func (p *Pipe) Init(cap int){
+func (p *Pipe) Init(cap int) {
 	p.chCap = cap
 	p.ch = make(chan interface{}, cap)
 }
 
 // GetConsumerCount 消费者数量
 // 默认为通道容量十分之一
-func (p *Pipe) GetConsumerCount() int{
-	return int(math.Ceil(float64(p.GetCap())/10))
+func (p *Pipe) GetConsumerCount() int {
+	return int(math.Ceil(float64(p.GetCap()) / 10))
 }
 
-func (p *Pipe) RunConsumer(data interface{}, taskCtx *TaskContext){
+func (p *Pipe) RunConsumer(data interface{}, taskCtx *TaskContext) {
 	panic(errors.New("RunConsumer not implemented"))
 }
 
 // EnableParallel 启用并行，默认启用
-func (p *Pipe) EnableParallel() bool{
+func (p *Pipe) EnableParallel() bool {
 	return true
 }
 
-type TaskContext struct{
-	db *gorm.DB
+type TaskContext struct {
+	db  *gorm.DB
 	ctx context.Context
 }
 
-func (this *TaskContext) Init(ctx context.Context, db *gorm.DB){
+func (this *TaskContext) Init(ctx context.Context, db *gorm.DB) {
 	this.ctx = ctx
 	this.db = db
 }
 
-func (this *TaskContext) GetDb() *gorm.DB{
+func (this *TaskContext) GetDb() *gorm.DB {
 	return this.db
 }
 
-func (this *TaskContext) GetCtx() context.Context{
+func (this *TaskContext) GetCtx() context.Context {
 	return this.ctx
 }
 

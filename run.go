@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -17,9 +16,8 @@ import (
 	"time"
 )
 
-func beforeTerminate(){
-	CloseAllDBConnections()
-	if isEnableSentry(){
+func beforeTerminate() {
+	if isEnableSentry() {
 		sentry.Flush(2 * time.Second)
 	}
 }
@@ -42,7 +40,7 @@ func graceRun(engine *gin.Engine) {
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	c := <- quit
+	c := <-quit
 	switch c {
 	case syscall.SIGINT, syscall.SIGTERM:
 		Info("Shutdown Server ...")
@@ -58,27 +56,28 @@ func graceRun(engine *gin.Engine) {
 // parseResource
 // 将resource名称格式转换为router可用的path格式
 // 即 user.users ==> /user/users/
-func parseResource(resource string) string{
+func parseResource(resource string) string {
 	return fmt.Sprintf("/%s/", strings.Replace(resource, ".", "/", -1))
 }
 
-func bindRestParams(paramsName string, apiHandler apiInterface, ginContext *gin.Context){
+func bindRestParams(paramsName string, apiHandler apiInterface, ginContext *gin.Context) {
 	elemVal := reflect.ValueOf(apiHandler).Elem()
 	elemField := elemVal.FieldByName(paramsName)
 	if elemField.CanSet() {
 		Info("==============", elemField.Type())
 		newParamsVal := reflect.New(elemField.Type().Elem())
-		bindObj :=  newParamsVal.Interface()
+		bindObj := newParamsVal.Interface()
 
 		ct := ginContext.GetHeader("Content-Type")
+		Info("000000000000", ct)
 		var err error
 
-		if strings.HasPrefix(ct, "application/json"){
+		if strings.HasPrefix(ct, "application/json") {
 			err = ginContext.ShouldBindJSON(bindObj)
-		}else{
+		} else {
 			err = ginContext.ShouldBind(bindObj)
 		}
-		if err != nil && err.Error() != "EOF"{
+		if err != nil && err.Error() != "EOF" {
 			panic(fmt.Sprintf("invalid params: %s", err))
 		}
 
@@ -86,30 +85,30 @@ func bindRestParams(paramsName string, apiHandler apiInterface, ginContext *gin.
 	}
 }
 
-func bindRouter(group *gin.RouterGroup, routers []apiInterface){
-	for _, r := range routers{
-		func (ir apiInterface){
+func bindRouter(group *gin.RouterGroup, routers []apiInterface) {
+	for _, r := range routers {
+		func(ir apiInterface) {
 			rs := ir.Resource()
 			t := reflect.Indirect(reflect.ValueOf(ir)).Type()
-			group.Any(parseResource(rs), func (ctx *gin.Context){
+			group.Any(parseResource(rs), func(ctx *gin.Context) {
 				Infof("coming request %s.%s", rs, ctx.Request.Method)
 				apiHandler := reflect.New(t).Interface().(apiInterface)
 
 				var resp Response
-				var tx *gorm.DB
-				if !apiHandler.DisableTx(){
+				tx := GetDB()
+				if !apiHandler.DisableTx() {
 					switch ctx.Request.Method {
 					case "PUT", "POST", "DELETE":
-						tx = GetDB().Begin()
+						tx = tx.Begin()
 						Info("db transaction begin...")
-						if err := tx.Error; err != nil{
+						if err := tx.Error; err != nil {
 							panic(err)
 						}
-						ctx.Set("db", tx)
 					}
 				}
 
-				apiHandler.setCtx(ctx)
+				ctx.Set("db", tx)
+				apiHandler.SetCtx(ctx)
 				switch ctx.Request.Method {
 				case "HEAD":
 					resp = apiHandler.Head()
@@ -128,28 +127,28 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 					bindRestParams("DeleteParams", apiHandler, ctx)
 					resp = apiHandler.Delete()
 				default:
-					ctx.String(404, "","http method not implemented")
+					ctx.String(404, "", "http method not implemented")
 					return
 				}
 
-				if tx != nil{
-					if err := tx.Commit().Error; err != nil{
+				if tx != nil {
+					if err := tx.Commit().Error; err != nil {
 						panic(err)
 					}
 					Info("db transaction committed...")
 				}
-				if resp == nil{
+				if resp == nil {
 					ctx.JSON(SERVICE_INNER_SUCCESS_CODE, Map{
-						"code": SERVICE_INNER_SUCCESS_CODE,
+						"code":  SERVICE_INNER_SUCCESS_CODE,
 						"state": "success",
-						"data": nil,
+						"data":  nil,
 					})
-				}else{
+				} else {
 					switch resp.GetDataType() {
 					case "json":
 						ctx.JSON(SERVICE_INNER_SUCCESS_CODE, resp.GetData())
 					default:
-						ctx.String(SERVICE_INNER_SUCCESS_CODE, "","empty response")
+						ctx.String(SERVICE_INNER_SUCCESS_CODE, "", "empty response")
 					}
 				}
 			})
@@ -157,11 +156,11 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface){
 	}
 }
 
-func bindDocRouter(group *gin.RouterGroup){
-	group.GET("/api/doc/", func (ctx *gin.Context){
+func bindDocRouter(group *gin.RouterGroup) {
+	group.GET("/api/doc/", func(ctx *gin.Context) {
 		Info("coming request api.doc", ctx.Request.Method)
 		contents, err := ioutil.ReadFile("./update_log.md")
-		if err != nil{
+		if err != nil {
 			panic(errors.New(fmt.Sprintf("gen doc failed: %s", err.Error())))
 		}
 
@@ -170,15 +169,15 @@ func bindDocRouter(group *gin.RouterGroup){
 	})
 }
 
-func RunWebServer(){
+func RunWebServer() {
 	engine := gin.New()
 	engine.Use(recovery())
 
 	// 应用中间件
-	for _, m := range registeredMiddlewares{
-		engine.Use(func(im middlewareInterFace) gin.HandlerFunc{
+	for _, m := range registeredMiddlewares {
+		engine.Use(func(im middlewareInterFace) gin.HandlerFunc {
 			im.Init()
-			return func (ctx *gin.Context){
+			return func(ctx *gin.Context) {
 				im.PreRequest(ctx)
 				ctx.Next()
 				im.AfterResponse(ctx)
@@ -187,7 +186,7 @@ func RunWebServer(){
 	}
 
 	// 应用路由、组
-	for groupName, apis := range registeredGroupedApis{
+	for groupName, apis := range registeredGroupedApis {
 		bindRouter(engine.Group(groupName), apis)
 	}
 
@@ -195,7 +194,7 @@ func RunWebServer(){
 	bindRouter(defaultGroup, registeredApis)
 
 	// 开发环境下生成接口文档
-	if Config.Mode == gin.DebugMode{
+	if Config.Mode == gin.DebugMode {
 		//GenApiDoc()
 	}
 

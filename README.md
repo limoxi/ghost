@@ -52,5 +52,5 @@ glo init
 ### 项目参考
 >[《实现领域驱动设计》[美] Vaughn Vernon 著；滕云 译](https://item.jd.com/11423256.html)    
 >[gin](https://github.com/gin-gonic/gin)    
->[gorm](https://github.com/jinzhu/gorm)     
+>[gorm](https://gorm.io/gorm)     
 >[logrus](https://github.com/sirupsen/logrus)
