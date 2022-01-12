@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"log"
+	"os"
 	"strings"
 	"time"
 )
@@ -24,13 +26,14 @@ var alias2db = make(map[string]*gorm.DB)
 var alias2dbModels = make(map[string][]dbModel)
 
 type dbConfig struct {
-	engine string
-	dsn    string
-	host   string
-	port   string
-	user   string
-	pwd    string
-	dbname string
+	engine    string
+	dsn       string
+	host      string
+	port      string
+	user      string
+	pwd       string
+	dbname    string
+	debugMode bool
 
 	maxConns       int // 最大连接数
 	maxIdleConns   int
@@ -57,6 +60,10 @@ func (this *dbConfig) GetDbName() string {
 	return strings.Split(strings.Split(this.dsn, "?")[0], "/")[1]
 }
 
+func (this *dbConfig) IsDebugMode() bool {
+	return this.debugMode
+}
+
 func NewDbConfigFromDSN(engine, dsn string) *dbConfig {
 	instance := new(dbConfig)
 	instance.engine = engine
@@ -64,7 +71,7 @@ func NewDbConfigFromDSN(engine, dsn string) *dbConfig {
 	return instance
 }
 
-func NewDbConfig(engine, host, port, user, pwd, dbname string, args ...int) *dbConfig {
+func NewDbConfig(engine, host, port, user, pwd, dbname string, debugMode bool, args ...int) *dbConfig {
 	instance := new(dbConfig)
 	instance.engine = engine
 	instance.host = host
@@ -72,6 +79,7 @@ func NewDbConfig(engine, host, port, user, pwd, dbname string, args ...int) *dbC
 	instance.user = user
 	instance.pwd = pwd
 	instance.dbname = dbname
+	instance.debugMode = debugMode
 	l := len(args)
 	if l >= 1 {
 		instance.maxConns = args[0]
@@ -113,9 +121,19 @@ func ConnectDB(dbconfig *dbConfig, args ...string) *gorm.DB {
 	case 1:
 		alias = args[0]
 	}
+	logLevel := logger.Silent
+	if dbconfig.IsDebugMode() {
+		logLevel = logger.Info
+	}
 	gdb, err := gorm.Open(mysql.Open(dbconfig.GetDsn()), &gorm.Config{
 		SkipDefaultTransaction: true,
-		Logger:                 nil,
+		Logger: logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+			logger.Config{
+				LogLevel: logLevel, // Log level
+				Colorful: true,
+			},
+		),
 	})
 	if err != nil {
 		log.Panic(err)

@@ -35,9 +35,11 @@ func recovery() gin.HandlerFunc {
 				}
 				Error(fmt.Sprintf("recover from panic: %s", errMsg))
 
-				if idb, ok := ctx.Get("db"); ok && idb != nil {
-					idb.(*gorm.DB).Rollback()
-					Warn("db transaction rollback")
+				if itx, ok := ctx.Get("db_tx_on"); ok && itx.(bool) {
+					if idb, ok := ctx.Get("db"); ok && idb != nil {
+						idb.(*gorm.DB).Rollback()
+						Warn("db transaction rollback")
+					}
 				}
 				ctx.JSON(SERVICE_INNER_SUCCESS_CODE, specError.GetData())
 				ctx.Abort()

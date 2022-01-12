@@ -96,18 +96,21 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface) {
 
 				var resp Response
 				tx := GetDB()
+				txOn := false
 				if !apiHandler.DisableTx() {
 					switch ctx.Request.Method {
 					case "PUT", "POST", "DELETE":
 						tx = tx.Begin()
-						Info("db transaction begin...")
 						if err := tx.Error; err != nil {
 							panic(err)
 						}
+						txOn = true
+						Info("db transaction begin...")
 					}
 				}
 
 				ctx.Set("db", tx)
+				ctx.Set("db_tx_on", txOn)
 				apiHandler.SetCtx(ctx)
 				switch ctx.Request.Method {
 				case "HEAD":
@@ -131,8 +134,9 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface) {
 					return
 				}
 
-				if tx != nil {
+				if tx != nil && txOn {
 					if err := tx.Commit().Error; err != nil {
+						Warn(err.Error())
 						panic(err)
 					}
 					Info("db transaction committed...")
