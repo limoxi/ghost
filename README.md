@@ -8,7 +8,7 @@
 ```
 
 ### 依赖
-- go ^1.13
+- go ^1.17
 - go mod
 
 ### 安装
@@ -16,25 +16,12 @@
 go get -u github.com/limoxi/ghost
 ```
 
-### 脚手架
-> 使用glo生成项目框架以及添加资源
-```shell script
-pip install -U git+https://github.com/limoxi/glo.git
-
-cd ~/workspace
-glo init
-
-```
-
 ### 使用
->[设计理念&使用规范](./guide_lines.md)
->[glo: 框架生成器](https://github.com/limoxi/glo)
-
-### 工程化目标
-- 
+>[设计理念&使用规范](./guide_lines.md)    
+>[glo: 框架生成器](https://github.com/limoxi/glo) 
 
 ### TODO
-- [ ] 支持多种服务调用, restApi, gRPC, websocket ...
+- [ ] 支持多种服务调用, restApi, RPC, websocket ...
 - [x] resource api设计
 - [x] 中间件设计
 - [x] orm（不采用依赖倒置原则进行接口设计，因为大部分场景下存储层的选择是固定的且不会改变）
@@ -50,7 +37,7 @@ glo init
 > [升级日志](./update_log.md)
 
 ### 项目参考
->[《实现领域驱动设计》[美] Vaughn Vernon 著；滕云 译](https://item.jd.com/11423256.html)    
+>[《实现领域驱动设计》[美] Vaughn Vernon 著；滕云 译](https://item.jd.com/11423256.html)     
 >[gin](https://github.com/gin-gonic/gin)    
 >[gorm](https://gorm.io/gorm)     
 >[logrus](https://github.com/sirupsen/logrus)
