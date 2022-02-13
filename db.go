@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"log"
@@ -44,13 +45,26 @@ func (this *dbConfig) GetDsn() string {
 	if this.dsn != "" {
 		return this.dsn
 	}
-	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		this.user,
-		this.pwd,
-		this.host,
-		this.port,
-		this.dbname,
-	)
+	switch this.engine {
+	case "mysql":
+		return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+			this.user,
+			this.pwd,
+			this.host,
+			this.port,
+			this.dbname,
+		)
+	case "postgres":
+		return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+			this.user,
+			this.pwd,
+			this.host,
+			this.port,
+			this.dbname,
+		)
+	default:
+		return this.dsn
+	}
 }
 
 func (this *dbConfig) GetDbName() string {
@@ -125,7 +139,17 @@ func ConnectDB(dbconfig *dbConfig, args ...string) *gorm.DB {
 	if dbconfig.IsDebugMode() {
 		logLevel = logger.Info
 	}
-	gdb, err := gorm.Open(mysql.Open(dbconfig.GetDsn()), &gorm.Config{
+	var dial gorm.Dialector
+	dsn := dbconfig.GetDsn()
+	switch dbconfig.engine {
+	case "mysql":
+		dial = mysql.Open(dsn)
+	case "postgres":
+		dial = postgres.Open(dsn)
+	default:
+		log.Panic("unsupport db driver", dbconfig.engine)
+	}
+	gdb, err := gorm.Open(dial, &gorm.Config{
 		SkipDefaultTransaction: true,
 		Logger: logger.New(
 			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
@@ -138,13 +162,13 @@ func ConnectDB(dbconfig *dbConfig, args ...string) *gorm.DB {
 	if err != nil {
 		log.Panic(err)
 	}
-	mysqlDB, err := gdb.DB()
+	db, err := gdb.DB()
 	if err != nil {
 		log.Panic(err)
 	}
-	mysqlDB.SetConnMaxLifetime(time.Second * time.Duration(dbconfig.maxIdleTimeout))
-	mysqlDB.SetMaxIdleConns(dbconfig.maxIdleConns)
-	mysqlDB.SetMaxOpenConns(dbconfig.maxConns)
+	db.SetConnMaxLifetime(time.Second * time.Duration(dbconfig.maxIdleTimeout))
+	db.SetMaxIdleConns(dbconfig.maxIdleConns)
+	db.SetMaxOpenConns(dbconfig.maxConns)
 	alias2db[alias] = gdb
 	log.Printf("connecting %s db: %s ...", dbconfig.engine, dbconfig.GetDbName())
 	return gdb

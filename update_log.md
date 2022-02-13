@@ -13,6 +13,8 @@ Release 正式版
 ```
 
 ### 升级日志
+> v0.0.1.220213_Alpha
+ - 支持postgresql
 > v0.0.1.220114_Alpha
  - 升级gorm到v2
 > v0.0.1.210828_Alpha
