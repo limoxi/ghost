@@ -45,4 +45,5 @@ require (
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
 
-replace gorm.io/gorm => github.com/limoxi/gorm v1.22.5-0.20220112171636-bd9a8822c1c3
+// replace gorm.io/gorm => github.com/limoxi/gorm v1.22.5-0.20220112171636-bd9a8822c1c3
+replace gorm.io/gorm => ../gorm

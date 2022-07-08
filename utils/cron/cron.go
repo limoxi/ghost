@@ -9,14 +9,14 @@ import (
 )
 
 type cron struct {
-	name string
-	spec string
+	name     string
+	spec     string
 	taskFunc TaskFunc
 }
 
 var name2task = make(map[string]*cron)
 
-func newTaskCtx() *TaskContext{
+func newTaskCtx() *TaskContext {
 	inst := new(TaskContext)
 	ctx := context.Background()
 	db := ghost.GetDB()
@@ -26,9 +26,9 @@ func newTaskCtx() *TaskContext{
 	return inst
 }
 
-func taskWrapper(task taskInterface) TaskFunc{
+func taskWrapper(task taskInterface) TaskFunc {
 
-	return func() error{
+	return func() error {
 		taskCtx := newTaskCtx()
 		db := taskCtx.GetDb()
 		ctx := taskCtx.GetCtx()
@@ -36,9 +36,9 @@ func taskWrapper(task taskInterface) TaskFunc{
 		taskName := task.GetName()
 		startTime := time.Now()
 		ghost.Info(fmt.Sprintf("[%s] run...", taskName))
-		if db != nil && task.IsEnableTx(){
+		if db != nil && task.IsEnableTx() {
 			tx := db.Begin()
-			if err := tx.Error; err != nil{
+			if err := tx.Error; err != nil {
 				panic(err)
 			}
 			ctx = context.WithValue(ctx, "db", tx)
@@ -46,10 +46,10 @@ func taskWrapper(task taskInterface) TaskFunc{
 			taskCtx.SetCtx(ctx)
 
 			task.Run(taskCtx)
-			if err := tx.Commit().Error; err != nil{
+			if err := tx.Commit().Error; err != nil {
 				ghost.Error(err)
 			}
-		}else{
+		} else {
 			defer ghost.RecoverFromCronTaskPanic(ctx)
 			task.Run(taskCtx)
 		}
@@ -59,20 +59,20 @@ func taskWrapper(task taskInterface) TaskFunc{
 	}
 }
 
-func fetchData(pi pipeInterface){
+func fetchData(pi pipeInterface) {
 	taskName := pi.(taskInterface).GetName()
-	go func(){
-		defer func(){
-			if err := recover(); err!=nil{
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
 				ghost.Warn(string(debug.Stack()))
 				fetchData(pi)
 				errMsg := err.(error).Error()
 				ghost.CaptureTaskErrorToSentry(context.Background(), errMsg)
 			}
 		}()
-		for{
+		for {
 			data := pi.GetData()
-			if data != nil{
+			if data != nil {
 				taskCtx := newTaskCtx()
 				ghost.Info(fmt.Sprintf("[%s] consume data...", taskName))
 				startTime := time.Now()
@@ -84,35 +84,35 @@ func fetchData(pi pipeInterface){
 	}()
 }
 
-func RegisterPipeTask(pi pipeInterface, spec string){
-	task := RegisterTask(pi.(taskInterface), spec)
-	if task != nil{
-		if pi.EnableParallel(){ // 并行模式下，开启通道容量十分之一的goroutine消费通道
-			for i := pi.GetConsumerCount(); i>0; i--{
+func RegisterPipeTask(pi pipeInterface, spec string, runInRest ...bool) {
+	task := RegisterTask(pi.(taskInterface), spec, runInRest...)
+	if task != nil {
+		if pi.EnableParallel() { // 并行模式下，开启通道容量十分之一的goroutine消费通道
+			for i := pi.GetConsumerCount(); i > 0; i-- {
 				fetchData(pi)
 			}
-		}else{
+		} else {
 			fetchData(pi)
 		}
 	}
 }
 
-func RegisterTask(task taskInterface, spec string, args ...bool) *cron {
+func RegisterTask(task taskInterface, spec string, runInRest ...bool) *cron {
 	taskInRest := false
-	switch len(args) {
+	switch len(runInRest) {
 	case 1:
-		taskInRest = args[0]
+		taskInRest = runInRest[0]
 	}
-	if ghost.Config.GetString("run_mod") == "cron" || taskInRest{
+	if ghost.Config.GetString("run_mod") == "cron" || taskInRest {
 		tname := task.GetName()
 		wrappedFn := taskWrapper(task)
 		cronTask := &cron{
-			name: tname,
-			spec: spec,
+			name:     tname,
+			spec:     spec,
 			taskFunc: wrappedFn,
 		}
 		name2task[tname] = cronTask
-		
+
 		return cronTask
 	}
 	return nil

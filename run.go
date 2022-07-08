@@ -64,12 +64,10 @@ func bindRestParams(paramsName string, apiHandler apiInterface, ginContext *gin.
 	elemVal := reflect.ValueOf(apiHandler).Elem()
 	elemField := elemVal.FieldByName(paramsName)
 	if elemField.CanSet() {
-		Info("==============", elemField.Type())
 		newParamsVal := reflect.New(elemField.Type().Elem())
 		bindObj := newParamsVal.Interface()
 
 		ct := ginContext.GetHeader("Content-Type")
-		Info("000000000000", ct)
 		var err error
 
 		if strings.HasPrefix(ct, "application/json") {
