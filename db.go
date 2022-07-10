@@ -14,7 +14,7 @@ import (
 )
 
 type BaseDBModel struct {
-	Id        int `gorm:"primaryKey"`
+	Id        int       `gorm:"primaryKey"`
 	UpdatedAt time.Time `gorm:"autoCreateTime"`
 	CreatedAt time.Time `gorm:"autoUpdateTime"`
 }
@@ -141,6 +141,7 @@ func ConnectDB(dbconfig *dbConfig, args ...string) *gorm.DB {
 	}
 	var dial gorm.Dialector
 	dsn := dbconfig.GetDsn()
+	log.Printf(dsn)
 	switch dbconfig.engine {
 	case "mysql":
 		dial = mysql.Open(dsn)

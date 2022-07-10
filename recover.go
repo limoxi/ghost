@@ -30,9 +30,7 @@ func recovery() gin.HandlerFunc {
 					errMsg = err.(error).Error()
 					specError = DefaultError(errMsg)
 				}
-				if Config.Mode == gin.DebugMode {
-					debug.PrintStack()
-				}
+				debug.PrintStack()
 				Error(fmt.Sprintf("recover from panic: %s", errMsg))
 
 				if itx, ok := ctx.Get("db_tx_on"); ok && itx.(bool) {
