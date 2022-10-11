@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/limoxi/ghost/event"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -139,6 +140,10 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface) {
 					}
 					Info("db transaction committed...")
 				}
+				// 处理暂存的事件 --start
+				ctx.Set("db", GetDB()) // 重置db
+				event.EmitAll(ctx)
+				// -- end
 				if resp == nil {
 					ctx.JSON(SERVICE_INNER_SUCCESS_CODE, Map{
 						"code":  SERVICE_INNER_SUCCESS_CODE,
