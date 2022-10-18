@@ -9,6 +9,30 @@ import (
 	"runtime/debug"
 )
 
+func rollbackTxInCtx(ctx context.Context) {
+	var txOn bool
+	var db interface{}
+	if ginCtx, ok := ctx.(*gin.Context); ok {
+		if itx, okk := ginCtx.Get("db_tx_on"); okk && itx.(bool) {
+			txOn = true
+			if idb, okkk := ginCtx.Get("db"); okkk && idb != nil {
+				db = idb
+			}
+		}
+	} else {
+		if itx := ctx.Value("db_tx_on"); itx != nil && itx.(bool) {
+			txOn = true
+			if idb := ctx.Value("db"); idb != nil {
+				db = idb
+			}
+		}
+	}
+	if txOn && db != nil {
+		db.(*gorm.DB).Rollback()
+		Warn("db transaction rollback")
+	}
+}
+
 func recovery() gin.HandlerFunc {
 	Info("recover func loaded...")
 	return func(ctx *gin.Context) {
@@ -33,12 +57,7 @@ func recovery() gin.HandlerFunc {
 				debug.PrintStack()
 				Error(fmt.Sprintf("recover from panic: %s", errMsg))
 
-				if itx, ok := ctx.Get("db_tx_on"); ok && itx.(bool) {
-					if idb, ok := ctx.Get("db"); ok && idb != nil {
-						idb.(*gorm.DB).Rollback()
-						Warn("db transaction rollback")
-					}
-				}
+				rollbackTxInCtx(ctx)
 				ctx.JSON(SERVICE_INNER_SUCCESS_CODE, specError.GetData())
 				ctx.Abort()
 			}
@@ -47,15 +66,11 @@ func recovery() gin.HandlerFunc {
 	}
 }
 
-func RecoverFromCronTaskPanic(ctx context.Context) {
-	db := GetDBFromCtx(ctx)
+func RecoverFromPanic(ctx context.Context, scene string) {
 	if err := recover(); err != nil {
 		Error(string(debug.Stack()))
-		Warn("recover from cron task panic...", err)
-		if db != nil {
-			db.Rollback()
-			Warn("[ORM] rollback transaction for cron task")
-		}
+		Warn(fmt.Sprintf("recover from %s panic...", scene), err)
+		rollbackTxInCtx(ctx)
 
 		{
 			// 推送日志到sentry

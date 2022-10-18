@@ -29,9 +29,9 @@ go get -u github.com/limoxi/ghost
 - [x] 配置文件设计
 - [x] 异常处理
 - [x] DDD规范
+- [x] 事件机制
 - [ ] 分布式锁
 - [x] 日志
-- [ ] docker部署
 - [ ] 自动生成api文档
 
 > [升级日志](./update_log.md)

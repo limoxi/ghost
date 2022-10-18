@@ -1,4 +1,4 @@
-package event
+package ghost
 
 import (
 	"context"
@@ -6,30 +6,26 @@ import (
 	"runtime/debug"
 )
 
-// IRestContext 解决循环依赖
-type IRestContext interface {
-	AddEvent(eventData map[string]interface{})
-}
-
 type localEngine struct{}
 
 func (this *localEngine) GetType() string {
 	return "local"
 }
 
-func (this *localEngine) Emit(ctx context.Context, e *Event) {
+func (this *localEngine) Emit(ctx *Context, e *Event) {
 	for _, h := range getHandlersForEvent(e.Name) {
 		fmt.Println(fmt.Sprintf("[event-local] %s emit", e.Name))
 		go func(handler localEventHandler) {
 			defer func() {
 				if err := recover(); err != nil {
-					fmt.Println(string(debug.Stack()))
+					debug.PrintStack()
+					Error(err)
 				}
 			}()
 
-			err := handler.Handle(ctx, e.data)
+			err := handler.Handle(ctx, NewGMapFromData(e.data))
 			if err != nil {
-				fmt.Println(err)
+				Error(err)
 			}
 		}(h)
 	}
@@ -42,7 +38,7 @@ func newLocalEngine() *localEngine {
 // localEngine发出事件的处理器
 type localEventHandler interface {
 	GetEventName() string
-	Handle(ctx context.Context, eventData map[string]interface{}) error
+	Handle(ctx context.Context, eventData GMap) error
 }
 
 var event2Handlers = make(map[string][]localEventHandler)

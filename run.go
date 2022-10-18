@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/limoxi/ghost/event"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -89,15 +88,15 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface) {
 		func(ir apiInterface) {
 			rs := ir.Resource()
 			t := reflect.Indirect(reflect.ValueOf(ir)).Type()
-			group.Any(parseResource(rs), func(ctx *gin.Context) {
-				Infof("coming request %s.%s", rs, ctx.Request.Method)
+			group.Any(parseResource(rs), func(ginCtx *gin.Context) {
+				Infof("coming request %s.%s", rs, ginCtx.Request.Method)
 				apiHandler := reflect.New(t).Interface().(apiInterface)
 
 				var resp Response
 				tx := GetDB()
 				txOn := false
 				if !apiHandler.DisableTx() {
-					switch ctx.Request.Method {
+					switch ginCtx.Request.Method {
 					case "PUT", "POST", "DELETE":
 						tx = tx.Begin()
 						if err := tx.Error; err != nil {
@@ -108,28 +107,31 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface) {
 					}
 				}
 
-				ctx.Set("db", tx)
-				ctx.Set("db_tx_on", txOn)
-				apiHandler.SetCtx(ctx)
-				switch ctx.Request.Method {
+				ighostCtx, _ := ginCtx.Get("ghostCtx")
+				ghostCtx := ighostCtx.(*Context)
+				ghostCtx.Set("db", tx).
+					Set("db_tx_on", txOn)
+
+				apiHandler.SetCtx(ghostCtx)
+				switch ginCtx.Request.Method {
 				case "HEAD":
 					resp = apiHandler.Head()
 				case "OPTIONS":
 					resp = apiHandler.Options()
 				case "", "GET":
-					bindRestParams("GetParams", apiHandler, ctx)
+					bindRestParams("GetParams", apiHandler, ginCtx)
 					resp = apiHandler.Get()
 				case "PUT":
-					bindRestParams("PutParams", apiHandler, ctx)
+					bindRestParams("PutParams", apiHandler, ginCtx)
 					resp = apiHandler.Put()
 				case "POST":
-					bindRestParams("PostParams", apiHandler, ctx)
+					bindRestParams("PostParams", apiHandler, ginCtx)
 					resp = apiHandler.Post()
 				case "DELETE":
-					bindRestParams("DeleteParams", apiHandler, ctx)
+					bindRestParams("DeleteParams", apiHandler, ginCtx)
 					resp = apiHandler.Delete()
 				default:
-					ctx.String(404, "", "http method not implemented")
+					ginCtx.String(404, "", "http method not implemented")
 					return
 				}
 
@@ -141,11 +143,10 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface) {
 					Info("db transaction committed...")
 				}
 				// 处理暂存的事件 --start
-				ctx.Set("db", GetDB()) // 重置db
-				event.EmitAll(ctx)
-				// -- end
+				EmitAll(ghostCtx)
+				// 处理暂存的事件 -- end
 				if resp == nil {
-					ctx.JSON(SERVICE_INNER_SUCCESS_CODE, Map{
+					ginCtx.JSON(SERVICE_INNER_SUCCESS_CODE, Map{
 						"code":  SERVICE_INNER_SUCCESS_CODE,
 						"state": "success",
 						"data":  nil,
@@ -153,9 +154,9 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface) {
 				} else {
 					switch resp.GetDataType() {
 					case "json":
-						ctx.JSON(SERVICE_INNER_SUCCESS_CODE, resp.GetData())
+						ginCtx.JSON(SERVICE_INNER_SUCCESS_CODE, resp.GetData())
 					default:
-						ctx.String(SERVICE_INNER_SUCCESS_CODE, "", "empty response")
+						ginCtx.String(SERVICE_INNER_SUCCESS_CODE, "", "empty response")
 					}
 				}
 			})
@@ -180,14 +181,22 @@ func RunWebServer() {
 	engine := gin.New()
 	engine.Use(recovery())
 
-	// 应用中间件
+	// 默认中间件，处理context
+	engine.Use(func(ginCtx *gin.Context) {
+		ghostCtx := NewContext()
+		ghostCtx.Set("ginCtx", ginCtx)
+		ginCtx.Set("ghostCtx", ghostCtx)
+		ginCtx.Next()
+	})
+	// 自定义中间件
 	for _, m := range registeredMiddlewares {
 		engine.Use(func(im middlewareInterFace) gin.HandlerFunc {
 			im.Init()
-			return func(ctx *gin.Context) {
-				im.PreRequest(ctx)
-				ctx.Next()
-				im.AfterResponse(ctx)
+			return func(ginCtx *gin.Context) {
+				ghostCtx := GetContextFromGinCtx(ginCtx)
+				im.PreRequest(ghostCtx)
+				ginCtx.Next()
+				im.AfterResponse(ghostCtx)
 			}
 		}(m))
 	}

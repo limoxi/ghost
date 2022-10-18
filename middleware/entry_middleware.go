@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/limoxi/ghost"
 	util "github.com/limoxi/ghost/utils"
 	"strings"
@@ -14,9 +13,13 @@ func (this *EntryMiddleware) Init() {
 	ghost.Info("EntryMiddleware loaded")
 }
 
-func (this *EntryMiddleware) PreRequest(ctx *gin.Context) {
+func (this *EntryMiddleware) PreRequest(ctx *ghost.Context) {
 	// 检查是否需要经由中间件
-	if strings.ToUpper(ctx.Request.Method) == "OPTIONS" {
+	ginCtx := ctx.GetGinCtx()
+	if ginCtx == nil {
+		return
+	}
+	if strings.ToUpper(ginCtx.Request.Method) == "OPTIONS" {
 		ctx.Set("__middleware_passed", true)
 	}
 
@@ -25,7 +28,7 @@ func (this *EntryMiddleware) PreRequest(ctx *gin.Context) {
 	corsWhiteList := ghost.Config.GetArray("cors.white_list")
 	if len(corsWhiteList) > 0 {
 		validHost := ""
-		curHost := ctx.Request.Host
+		curHost := ginCtx.Request.Host
 		if corsWhiteList[0].(string) == anyHost {
 			validHost = anyHost
 		}
@@ -33,13 +36,13 @@ func (this *EntryMiddleware) PreRequest(ctx *gin.Context) {
 			validHost = curHost
 		}
 		if validHost != "" {
-			ctx.Header("Access-Control-Allow-Origin", validHost)
-			ctx.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
-			ctx.Header("Access-Control-Allow-Headers", "Origin, Authorization, X-Requested-With, Content-Type, Accept")
+			ginCtx.Header("Access-Control-Allow-Origin", validHost)
+			ginCtx.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+			ginCtx.Header("Access-Control-Allow-Headers", "Origin, Authorization, X-Requested-With, Content-Type, Accept")
 		}
 	}
 }
 
-func (this *EntryMiddleware) AfterResponse(ctx *gin.Context) {
+func (this *EntryMiddleware) AfterResponse(ctx *ghost.Context) {
 
 }

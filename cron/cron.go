@@ -42,7 +42,8 @@ func taskWrapper(task taskInterface) TaskFunc {
 				panic(err)
 			}
 			ctx = context.WithValue(ctx, "db", tx)
-			defer ghost.RecoverFromCronTaskPanic(ctx)
+			ctx = context.WithValue(ctx, "db_tx_on", true)
+			defer ghost.RecoverFromPanic(ctx, "cron")
 			taskCtx.SetCtx(ctx)
 
 			task.Run(taskCtx)
@@ -50,7 +51,7 @@ func taskWrapper(task taskInterface) TaskFunc {
 				ghost.Error(err)
 			}
 		} else {
-			defer ghost.RecoverFromCronTaskPanic(ctx)
+			defer ghost.RecoverFromPanic(ctx, "cron")
 			task.Run(taskCtx)
 		}
 		dur := time.Since(startTime)

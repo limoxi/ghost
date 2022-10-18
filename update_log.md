@@ -13,6 +13,9 @@ Release 正式版
 ```
 
 ### 升级日志
+> v0.0.1.221018_Alpha
+ - 增加事件机制
+ - 封装context
 > v0.0.1.220213_Alpha
  - 支持postgresql
 > v0.0.1.220114_Alpha

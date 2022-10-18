@@ -19,35 +19,21 @@ func (c *ContextObject) GetCtx() context.Context {
 	return c.ctx
 }
 
-func (c *ContextObject) GetGinContext() *gin.Context {
-	ginCtx, ok := c.ctx.(*gin.Context)
-	if ok {
-		return ginCtx
+func (c *ContextObject) GetGinCtx() *gin.Context {
+	ictx := c.ctx.Value("ginCtx")
+	if ictx == nil {
+		return nil
 	}
-	return nil
+	return ictx.(*gin.Context)
 }
 
 // GetDB 尝试从context中获取db(事务), 没有则返回默认
 func (c *ContextObject) GetDB() *gorm.DB {
 	if c.ctx != nil {
-		if idb, ok := c.GetGinContext().Get("db"); ok && idb != nil {
-			return idb.(*gorm.DB)
-		}
-		return nil
+		return GetDBFromCtx(c.ctx)
 	} else {
 		return GetDB()
 	}
-}
-
-func (c *ContextObject) Get(key string) interface{} {
-	if i, ok := c.GetGinContext().Get(key); ok {
-		return i
-	}
-	return nil
-}
-
-func (c *ContextObject) Set(k string, v interface{}) {
-	c.GetGinContext().Set(k, v)
 }
 
 // DomainModel 领域模型
@@ -58,10 +44,6 @@ type DomainModel struct {
 // DomainService 领域服务
 type DomainService struct {
 	ContextObject
-}
-
-func (this *DomainModel) GetDbModel() interface{} {
-	return this.Get("dbModel")
 }
 
 func (this *DomainModel) handleEmbedStruct(stField reflect.StructField, svField reflect.Value, dv reflect.Value) {
@@ -101,7 +83,6 @@ func (this *DomainModel) NewFromDbModel(do interface{}, dbModel interface{}) {
 			}
 		}
 	}
-	this.Set("dbModel", dbModel)
 }
 
 type BaseDomainRepository struct {

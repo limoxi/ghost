@@ -1,15 +1,13 @@
 package ghost
 
-import "github.com/gin-gonic/gin"
-
-var registeredMiddlewares  = make([]middlewareInterFace, 0)
+var registeredMiddlewares = make([]middlewareInterFace, 0)
 
 type middlewareInterFace interface {
 	Init()
-	PreRequest(*gin.Context)
-	AfterResponse(*gin.Context)
+	PreRequest(*Context)
+	AfterResponse(*Context)
 }
 
-func RegisterMiddleware(m middlewareInterFace){
+func RegisterMiddleware(m middlewareInterFace) {
 	registeredMiddlewares = append(registeredMiddlewares, m)
 }
