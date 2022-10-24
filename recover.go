@@ -10,23 +10,20 @@ import (
 )
 
 func rollbackTxInCtx(ctx context.Context) {
+	if ginCtx, ok := ctx.(*gin.Context); ok {
+		ighostCtx, _ := ginCtx.Get("ghostCtx")
+		ctx = ighostCtx.(*Context)
+	}
+
 	var txOn bool
 	var db interface{}
-	if ginCtx, ok := ctx.(*gin.Context); ok {
-		if itx, okk := ginCtx.Get("db_tx_on"); okk && itx.(bool) {
-			txOn = true
-			if idb, okkk := ginCtx.Get("db"); okkk && idb != nil {
-				db = idb
-			}
-		}
-	} else {
-		if itx := ctx.Value("db_tx_on"); itx != nil && itx.(bool) {
-			txOn = true
-			if idb := ctx.Value("db"); idb != nil {
-				db = idb
-			}
+	if itx := ctx.Value("db_tx_on"); itx != nil && itx.(bool) {
+		txOn = true
+		if idb := ctx.Value("db"); idb != nil {
+			db = idb
 		}
 	}
+
 	if txOn && db != nil {
 		db.(*gorm.DB).Rollback()
 		Warn("db transaction rollback")
