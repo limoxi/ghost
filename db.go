@@ -15,8 +15,8 @@ import (
 
 type BaseDBModel struct {
 	Id        int       `gorm:"primaryKey"`
-	UpdatedAt time.Time `gorm:"autoCreateTime"`
-	CreatedAt time.Time `gorm:"autoUpdateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
 
 type dbModel interface {
