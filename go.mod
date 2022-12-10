@@ -10,7 +10,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 	gorm.io/driver/mysql v1.3.4
 	gorm.io/driver/postgres v1.3.8
-	gorm.io/gorm v1.23.8
+	gorm.io/gorm v1.24.2
 )
 
 require (
@@ -45,4 +45,4 @@ require (
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
 
-replace gorm.io/gorm => github.com/limoxi/gorm 353f33018574d354d32b5203542a9d64b3bfcba0
+replace gorm.io/gorm => github.com/limoxi/gorm v1.22.5-0.20221210140300-504429e24e17
