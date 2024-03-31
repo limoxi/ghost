@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"github.com/panjf2000/ants/v2"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -16,9 +18,14 @@ import (
 	"time"
 )
 
+var wsPool *ants.Pool
+
 func beforeTerminate() {
 	if isEnableSentry() {
 		sentry.Flush(2 * time.Second)
+	}
+	if wsPool != nil {
+		wsPool.Release()
 	}
 }
 
@@ -208,6 +215,60 @@ func RunWebServer() {
 
 	defaultGroup := &engine.RouterGroup
 	bindRouter(defaultGroup, registeredApis)
+
+	// websocket
+	var err error
+	wsPool, err = ants.NewPool(1000)
+	if err != nil {
+		Error(err)
+		panic(err)
+	}
+
+	wsGroup := engine.Group("ws")
+	for name, ihandler := range registeredWSHandler {
+		wsGroup.GET(name, func(ctx *gin.Context) {
+			Infof("coming ws request %s", name)
+			upgrader := ihandler.GetUpgrader()
+			if upgrader == nil {
+				upgrader = &websocket.Upgrader{
+					ReadBufferSize:  1024,
+					WriteBufferSize: 1024,
+					CheckOrigin: func(r *http.Request) bool {
+						return true
+					},
+				}
+			}
+
+			ws, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+			if err != nil {
+				Error(err)
+				panic(err)
+			}
+			defer ws.Close()
+			ihandler.SetWSConn(ws)
+
+		outerFor:
+			for {
+				messageType, message, err := ws.ReadMessage()
+				if err != nil {
+					Error(err)
+				}
+				switch messageType {
+				case websocket.CloseMessage:
+					break outerFor
+				case websocket.TextMessage:
+					content := string(message)
+					if content == WS_MSG_PING {
+						ws.WriteMessage(websocket.TextMessage, []byte(WS_MSG_PONG))
+					} else {
+						wsPool.Submit(func() {
+							ihandler.Receive(content)
+						})
+					}
+				}
+			}
+		})
+	}
 
 	// 开发环境下生成接口文档
 	if Config.Mode == gin.DebugMode {
