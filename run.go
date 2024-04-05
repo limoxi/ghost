@@ -145,13 +145,7 @@ func bindRouter(group *gin.RouterGroup, routers []apiInterface) {
 				// 处理暂存的事件 --start
 				EmitAll(ghostCtx)
 				// 处理暂存的事件 -- end
-				if resp == nil {
-					ginCtx.JSON(SERVICE_INNER_SUCCESS_CODE, Map{
-						"code":  SERVICE_INNER_SUCCESS_CODE,
-						"state": "success",
-						"data":  nil,
-					})
-				} else {
+				if resp != nil {
 					switch resp.GetDataType() {
 					case "json":
 						ginCtx.JSON(SERVICE_INNER_SUCCESS_CODE, resp.GetData())
