@@ -208,6 +208,8 @@ func RunWebServer() {
 		//GenApiDoc()
 	}
 
+	engine.StaticFS("/assets", http.Dir("assets"))
+
 	//engine.Run()
 	graceRun(engine)
 }
