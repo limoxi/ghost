@@ -122,7 +122,7 @@ func parseEnvArgs(data Map) Map {
 }
 
 func parseEnvFromString(str string) string {
-	str = strings.Replace(str, " ", "", -1)
+	str = strings.Trim(str, " ")
 	if !strings.HasPrefix(str, "${") {
 		return str
 	}
@@ -130,7 +130,7 @@ func parseEnvFromString(str string) string {
 	defaultV := ""
 	sps := strings.Split(str, "||")
 	if len(sps) == 2 {
-		defaultV = sps[1]
+		defaultV = strings.Trim(sps[1], " ")
 	}
 	sqIndex := strings.Index(str, "}")
 	envKey := str[2:sqIndex]
