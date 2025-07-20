@@ -104,7 +104,7 @@ func RegisterTask(task taskInterface, spec string, runInRest ...bool) *cron {
 	case 1:
 		taskInRest = runInRest[0]
 	}
-	if ghost.Config.GetString("run_mod") == "cron" || taskInRest {
+	if taskInRest {
 		tname := task.GetName()
 		wrappedFn := taskWrapper(task)
 		cronTask := &cron{

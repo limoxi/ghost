@@ -7,7 +7,7 @@ import (
 
 	"runtime/debug"
 	"time"
-	
+
 	"os"
 )
 
@@ -28,7 +28,7 @@ func CaptureTaskErrorToSentry(ctx go_context.Context, errMsg string) {
 
 	data := make(map[string]interface{})
 	data["err_msg"] = errMsg
-	data["service_name"] = Config.GetString("service_name")
+	data["service_name"] = Config.GetString("name")
 
 	data["stack"] = string(debug.Stack())
 
@@ -40,12 +40,11 @@ func CaptureTaskErrorToSentry(ctx go_context.Context, errMsg string) {
 	}
 }
 
-
 func init() {
 	if isEnableSentry() {
 		dsn := Config.GetString("sentry.dsn")
 		err := sentry.Init(sentry.ClientOptions{
-			Dsn: dsn,
+			Dsn:              dsn,
 			AttachStacktrace: true,
 		})
 		if err != nil {

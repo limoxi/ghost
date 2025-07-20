@@ -61,22 +61,11 @@ func (this *config) load() {
 		this.setDefaultConfigData()
 		return
 	}
-	pre := "prod"
-	if this.Mode == gin.DebugMode {
-		pre = "dev"
-	}
-	filename := pre + ".conf.yaml"
+	filename := "config.yaml"
 	confPath := filepath.Join(workPath, "conf", filename)
 	if utils.FileExist(confPath) {
 		if err := this.parseYamlFile(confPath); err == nil {
 			return
-		}
-	} else {
-		confPath = filepath.Join(workPath, "conf", "conf.yaml")
-		if utils.FileExist(confPath) {
-			if err := this.parseYamlFile(confPath); err == nil {
-				return
-			}
 		}
 	}
 	this.setDefaultConfigData()
@@ -126,14 +115,15 @@ func parseEnvFromString(str string) string {
 	if !strings.HasPrefix(str, "${") {
 		return str
 	}
+
+	str = str[2 : len(str)-1]
 	envV := ""
 	defaultV := ""
 	sps := strings.Split(str, "||")
 	if len(sps) == 2 {
 		defaultV = strings.Trim(sps[1], " ")
 	}
-	sqIndex := strings.Index(str, "}")
-	envKey := str[2:sqIndex]
+	envKey := strings.Trim(sps[0], " ")
 	if envKey != "" {
 		envV = os.Getenv(envKey)
 		if envV == "" {
@@ -158,4 +148,8 @@ func init() {
 	Infof("loading config in %s mode...", mode)
 	Config.Mode = mode
 	Config.load()
+	confMode := Config.GetString("mode")
+	if confMode != "" {
+		Config.Mode = confMode
+	}
 }

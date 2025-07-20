@@ -25,7 +25,7 @@ func (this *EntryMiddleware) PreRequest(ctx *ghost.Context) {
 
 	// 实现CORS
 	anyHost := "*"
-	corsWhiteList := ghost.Config.GetArray("cors.white_list")
+	corsWhiteList := ghost.Config.GetArray("web.cors.white_list")
 	if len(corsWhiteList) > 0 {
 		validHost := ""
 		curHost := ginCtx.Request.Host

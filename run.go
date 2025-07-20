@@ -23,8 +23,8 @@ func beforeTerminate() {
 }
 
 func graceRun(engine *gin.Engine) {
-	host := Config.GetString("web_server.host", "")
-	port := Config.GetInt("web_server.port", 8080)
+	host := Config.GetString("web.host", "")
+	port := Config.GetInt("web.port", 8080)
 	server := &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", host, port),
 		Handler: engine,
