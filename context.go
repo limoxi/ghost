@@ -1,14 +1,25 @@
 package ghost
 
 import (
-	"github.com/gin-gonic/gin"
 	"sync"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
+
+const __MIDDLEWARE_IGNORED_KEY = "__middleware_ignored"
 
 type Context struct {
 	mu   sync.Mutex
 	data GMap
+}
+
+func (this *Context) IsMiddlewareIgnored() bool {
+	return this.data.Get(__MIDDLEWARE_IGNORED_KEY).(bool)
+}
+
+func (this *Context) SetMiddlewareIgnored() {
+	this.data[__MIDDLEWARE_IGNORED_KEY] = true
 }
 
 func (this *Context) Set(k string, v interface{}) *Context {

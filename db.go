@@ -3,14 +3,16 @@ package ghost
 import (
 	"context"
 	"fmt"
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 	"log"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type BaseDBModel struct {
@@ -62,6 +64,8 @@ func (this *dbConfig) GetDsn() string {
 			this.port,
 			this.dbname,
 		)
+	case "sqlite":
+		return this.dbname
 	default:
 		return this.dsn
 	}
@@ -147,6 +151,8 @@ func ConnectDB(dbconfig *dbConfig, args ...string) *gorm.DB {
 		dial = mysql.Open(dsn)
 	case "postgres":
 		dial = postgres.Open(dsn)
+	case "sqlite":
+		dial = sqlite.Open(dsn)
 	default:
 		log.Panic("unsupport db driver", dbconfig.engine)
 	}
@@ -167,9 +173,14 @@ func ConnectDB(dbconfig *dbConfig, args ...string) *gorm.DB {
 	if err != nil {
 		log.Panic(err)
 	}
-	db.SetConnMaxLifetime(time.Second * time.Duration(dbconfig.maxIdleTimeout))
-	db.SetMaxIdleConns(dbconfig.maxIdleConns)
-	db.SetMaxOpenConns(dbconfig.maxConns)
+	if dbconfig.engine == "sqlite" {
+		db.SetMaxOpenConns(1)
+		db.SetMaxIdleConns(1)
+	} else {
+		db.SetConnMaxLifetime(time.Second * time.Duration(dbconfig.maxIdleTimeout))
+		db.SetMaxIdleConns(dbconfig.maxIdleConns)
+		db.SetMaxOpenConns(dbconfig.maxConns)
+	}
 	alias2db[alias] = gdb
 	log.Printf("connecting %s db: %s ...", dbconfig.engine, dbconfig.GetDbName())
 	return gdb

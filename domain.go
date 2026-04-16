@@ -2,9 +2,10 @@ package ghost
 
 import (
 	"context"
+	"reflect"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"reflect"
 )
 
 type ContextObject struct {

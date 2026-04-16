@@ -1,9 +1,10 @@
 package middleware
 
 import (
+	"strings"
+
 	"github.com/limoxi/ghost"
 	util "github.com/limoxi/ghost/utils"
-	"strings"
 )
 
 type EntryMiddleware struct {
@@ -20,7 +21,7 @@ func (this *EntryMiddleware) PreRequest(ctx *ghost.Context) {
 		return
 	}
 	if strings.ToUpper(ginCtx.Request.Method) == "OPTIONS" {
-		ctx.Set("__middleware_passed", true)
+		ctx.SetMiddlewareIgnored()
 	}
 
 	// 实现CORS
@@ -40,6 +41,14 @@ func (this *EntryMiddleware) PreRequest(ctx *ghost.Context) {
 			ginCtx.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
 			ginCtx.Header("Access-Control-Allow-Headers", "Origin, Authorization, X-Requested-With, Content-Type, Accept")
 		}
+	}
+
+	// 不走中间件的资源
+	ignoredResources := ghost.Config.GetArray("web.middleware.ignored_resources")
+	fullPath := strings.ToLower(ginCtx.FullPath())
+	curResource := strings.Trim(fullPath, "/")
+	if util.NewLister(ignoredResources).Has(curResource) {
+		ctx.SetMiddlewareIgnored()
 	}
 }
 

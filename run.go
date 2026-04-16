@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -14,6 +12,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 )
 
 func beforeTerminate() {
@@ -210,6 +211,5 @@ func RunWebServer() {
 
 	engine.StaticFS("/assets", http.Dir("assets"))
 
-	//engine.Run()
 	graceRun(engine)
 }
