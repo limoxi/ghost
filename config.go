@@ -105,6 +105,16 @@ func parseEnvArgs(data Map) Map {
 				fullKey := ns + ik
 				data[fullKey] = iv
 			}
+		case []interface{}:
+			arr := v.([]interface{})
+			for i, item := range arr {
+				switch itemVal := item.(type) {
+				case Map:
+					arr[i] = parseEnvArgs(itemVal)
+				case string:
+					arr[i] = parseEnvFromString(itemVal)
+				}
+			}
 		}
 	}
 	return data
